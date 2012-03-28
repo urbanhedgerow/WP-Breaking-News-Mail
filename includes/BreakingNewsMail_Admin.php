@@ -385,64 +385,8 @@ class BreakingNewsMail_Admin {
         </table> <?php
             }
 
-            /**
-              Export subscriber emails and other details to CSV
-             */
-            function prepare_export($what) {
-                $confirmed = $this->get_public();
-                $unconfirmed = $this->get_public(0);
-                if ('all' == $what) {
-                    $subscribers = array_merge((array) $confirmed, (array) $unconfirmed, (array) $this->get_all_registered());
-                } elseif ('public' == $what) {
-                    $subscribers = array_merge((array) $confirmed, (array) $unconfirmed);
-                } elseif ('confirmed' == $what) {
-                    $subscribers = $confirmed;
-                } elseif ('unconfirmed' == $what) {
-                    $subscribers = $unconfirmed;
-                } elseif (is_numeric($what)) {
-                    $subscribers = $this->get_registered("cats=$what");
-                } elseif ('registered' == $what) {
-                    $subscribers = $this->get_registered();
-                } elseif ('all_users' == $what) {
-                    $subscribers = $this->get_all_registered();
-                }
-
-                natcasesort($subscribers);
-
-                $exportcsv = "User Email,User Name";
-                $all_cats = $this->all_cats(false, 'ID');
-
-                foreach ($all_cats as $cat) {
-                    $exportcsv .="," . $cat->cat_name;
-                    $cat_ids[] = $cat->term_id;
-                }
-                $exportcsv .="\r\n";
-
-                foreach ($subscribers as $subscriber) {
-                    if ($this->is_registered($subscriber)) {
-                        $user_ID = $this->get_user_id($subscriber);
-                        $user_info = get_userdata($user_ID);
-
-                        $cats = explode(',', get_user_meta($user_info->ID, $this->get_usermeta_keyname('bnm_subscribed'), true));
-                        $subscribed_cats = '';
-                        foreach ($cat_ids as $cat) {
-                            (in_array($cat, $cats)) ? $subscribed_cats .=",Yes" : $subscribed_cats .=",No";
-                        }
-
-                        $exportcsv .= $user_info->user_email . ',';
-                        $exportcsv .= $user_info->display_name;
-                        $exportcsv .= $subscribed_cats . "\r\n";
-                    } else {
-                        if (in_array($subscriber, $confirmed)) {
-                            $exportcsv .= $subscriber . ',' . __('Confirmed Public Subscriber', 'bnm') . "\r\n";
-                        } elseif (in_array($subscriber, $unconfirmed)) {
-                            $exportcsv .= $subscriber . ',' . __('Unconfirmed Public Subscriber', 'bnm') . "\r\n";
-                        }
-                    }
-                }
-
-                return $exportcsv;
-            }
+           
+           
 
         }
             ?>
