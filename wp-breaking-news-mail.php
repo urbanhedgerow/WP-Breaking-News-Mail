@@ -141,8 +141,8 @@ class WP_Breaking_News_Mail_Main {
             $this->bnm_options['exclude'] = "";
         } // option for excluded categories
 
-        if (empty($this->bnm_options['sender'])) {
-            $this->bnm_options['sender'] = "author";
+        if (empty($this->bnm_options['sender_email'])) {
+            $this->bnm_options['sender_email'] = "author";
         } // option for email notification sender
 
         if (empty($this->bnm_options['show_meta'])) {

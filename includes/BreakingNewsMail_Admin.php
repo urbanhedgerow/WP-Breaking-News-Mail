@@ -48,7 +48,10 @@ class BreakingNewsMail_Admin {
                 <input type="text" name="tracking" value="<?php echo stripslashes($this->bnm_options['tracking']) ?>" size="50" />
                 <br />eg. utm_source= bnm&utm_medium=email&utm_campaign=postnotify<br /><br />
 
-
+                <br /><br />
+                Sender email:
+                <input type="text" name="sender_tracking" value="<?php echo stripslashes($this->bnm_options['sender_email']) ?>" size="50" />
+                <br /><br />
 
 
                 <div class="" id="bnm_template">
@@ -102,7 +105,7 @@ class BreakingNewsMail_Admin {
 
     // Draw the option page
     function bnm_subscribers_page() {
-
+        global $wpdb, $bnmnonce;
         /* 1) mostrar la página de suscriptores
          *      -exportar suscriptores
          *      -eliminar
@@ -352,7 +355,7 @@ class BreakingNewsMail_Admin {
         }
                     ?></td></tr>
         </table> <?php
-        }
+            }
 
-    }
+        }
             ?>

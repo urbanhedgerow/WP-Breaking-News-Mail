@@ -5,7 +5,6 @@
  *
  * @author daniela
  */
-//define('BNM_USERS', $wpdb->get_blog_prefix() . 'bnm_users');
 class BreakingNewsMail_Controller {
 
     private $signup_dates = array();
@@ -19,8 +18,8 @@ class BreakingNewsMail_Controller {
     private $permalink = '';
     private $post_date = '';
     private $post_time = '';
-    private $myname = '';
-    private $myemail = '';
+    private $sender_name = '';
+    private $sender_email = '';
     private $signup_dates = array();
     private $filtered = 0;
     private $preview_email = false;
@@ -51,7 +50,6 @@ class BreakingNewsMail_Controller {
 
     function __construct() {
         $this->bnm_options = get_option('bnm_options');
-        //update_option('bnm_options', $this->bnm_options);
     }
 
     /**
@@ -228,119 +226,101 @@ class BreakingNewsMail_Controller {
         return $isSuscribed;
     }
 
-  
-
-    
-
-    /* Display our form; also handles (un)subscribe requests
+    /* handles (un)subscribe requests
      * @since 1
      *
      * @param    confirmed    $confirmed    users email
      * @return   boolean
      */
 
-    function shortcode($atts) {
-        extract(shortcode_atts(array(
-                    'hide' => '',
-                    'id' => '',
-                    'url' => '',
-                    'nojs' => 'false',
-                    'link' => '',
-                    'size' => 20
-                        ), $atts));
-
+    function handle_un_suscribe_request($atts) {
+        /* extract(shortcode_atts(array(
+          'hide' => '',
+          'id' => '',
+          'url' => '',
+          'nojs' => 'false',
+          'link' => '',
+          'size' => 20
+          ), $atts));
+         */
         // if link is true return a link to the page with the ajax class
         if ($link !== '' && !is_user_logged_in()) {
-            $this->s2form = "<a href=\"" . get_permalink($this->bnm_options['s2page']) . "\" class=\"s2popup\">" . $link . "</a>\r\n";
-            return $this->s2form;
+            $this->bnmform = "<a href=\"" . get_permalink($this->bnm_options['bnmpage']) . "\" class=\"bnmpopup\">" . $link . "</a>\r\n";
+            return $this->bnmform;
         }
 
         // if a button is hidden, show only other
-        if ($hide == 'subscribe') {
-            $this->input_form_action = "<input type=\"submit\" name=\"unsubscribe\" value=\"" . __('Unsubscribe', 'bnm') . "\" />";
-        } elseif ($hide == 'unsubscribe') {
-            $this->input_form_action = "<input type=\"submit\" name=\"subscribe\" value=\"" . __('Subscribe', 'bnm') . "\" />";
-        } else {
-            // both form input actions
-            $this->input_form_action = "<input type=\"submit\" name=\"subscribe\" value=\"" . __('Subscribe', 'bnm') . "\" />&nbsp;<input type=\"submit\" name=\"unsubscribe\" value=\"" . __('Unsubscribe', 'bnm') . "\" />";
-        }
+        /* if ($hide == 'subscribe') {
+          $this->input_form_action = "<input type=\"submit\" name=\"unsubscribe\" value=\"" . __('Unsubscribe', 'bnm') . "\" />";
+          } elseif ($hide == 'unsubscribe') {
+          $this->input_form_action = "<input type=\"submit\" name=\"subscribe\" value=\"" . __('Subscribe', 'bnm') . "\" />";
+          } else {
+          // both form input actions
+          $this->input_form_action = "<input type=\"submit\" name=\"subscribe\" value=\"" . __('Subscribe', 'bnm') . "\" />&nbsp;<input type=\"submit\" name=\"unsubscribe\" value=\"" . __('Unsubscribe', 'bnm') . "\" />";
+          } */
+
         // if ID is provided, get permalink
         if ($id) {
             $url = get_permalink($id);
-        } elseif ($this->bnm_options['s2page'] > 0) {
-            $url = get_permalink($this->bnm_options['s2page']);
+        } elseif ($this->bnm_options['bnmpage'] > 0) {
+            $url = get_permalink($this->bnm_options['bnmpage']);
         } else {
             $url = get_site_url();
         }
-        // build default form
-        if ($nojs == 'true') {
-            $this->form = "<form method=\"post\" action=\"" . $url . "\"><input type=\"hidden\" name=\"ip\" value=\"" . $_SERVER['REMOTE_ADDR'] . "\" /><p><label for=\"s2email\">" . __('Your email:', 'bnm') . "</label><br /><input type=\"text\" name=\"email\" id=\"s2email\" value=\"\" size=\"" . $size . "\" /></p><p>" . $this->input_form_action . "</p></form>";
-        } else {
-            $this->form = "<form method=\"post\" action=\"" . $url . "\"><input type=\"hidden\" name=\"ip\" value=\"" . $_SERVER['REMOTE_ADDR'] . "\" /><p><label for=\"s2email\">" . __('Your email:', 'bnm') . "</label><br /><input type=\"text\" name=\"email\" id=\"s2email\" value=\"" . __('Enter email address...', 'bnm') . "\" size=\"" . $size . "\" onfocus=\"if (this.value == '" . __('Enter email address...', 'bnm') . "') {this.value = '';}\" onblur=\"if (this.value == '') {this.value = '" . __('Enter email address...', 'bnm') . "';}\" /></p><p>" . $this->input_form_action . "</p></form>\r\n";
-        }
-        $this->s2form = $this->form;
+        /* // build default form
+          if ($nojs == 'true') {
+          $this->form = "<form method=\"post\" action=\"" . $url . "\"><input type=\"hidden\" name=\"ip\" value=\"" . $_SERVER['REMOTE_ADDR'] . "\" /><p><label for=\"bnmemail\">" . __('Your email:', 'bnm') . "</label><br /><input type=\"text\" name=\"email\" id=\"bnmemail\" value=\"\" size=\"" . $size . "\" /></p><p>" . $this->input_form_action . "</p></form>";
+          } else {
+          $this->form = "<form method=\"post\" action=\"" . $url . "\"><input type=\"hidden\" name=\"ip\" value=\"" . $_SERVER['REMOTE_ADDR'] . "\" /><p><label for=\"bnmemail\">" . __('Your email:', 'bnm') . "</label><br /><input type=\"text\" name=\"email\" id=\"bnmemail\" value=\"" . __('Enter email address...', 'bnm') . "\" size=\"" . $size . "\" onfocus=\"if (this.value == '" . __('Enter email address...', 'bnm') . "') {this.value = '';}\" onblur=\"if (this.value == '') {this.value = '" . __('Enter email address...', 'bnm') . "';}\" /></p><p>" . $this->input_form_action . "</p></form>\r\n";
+          }
+          $this->bnmform = $this->form; */
 
-        global $user_ID;
-        get_currentuserinfo();
-        if ($user_ID) {
-            $this->s2form = $this->profile;
-        }
-        if (isset($_POST['subscribe']) || isset($_POST['unsubscribe'])) {
+
+        if (isset($_POST['unsubscribe']) || isset($_POST['subscribe'])) {
             global $wpdb, $user_email;
             if (!is_email($_POST['email'])) {
-                $this->s2form = $this->form . $this->not_an_email;
-            } elseif ($this->is_barred($_POST['email'])) {
-                $this->s2form = $this->form . $this->barred_domain;
+                $this->bnmform = $this->form . $this->not_an_email;
             } else {
-                $this->email = $this->sanitize_email($_POST['email']);
+                $this->email = $this->is_email($_POST['email']);
+
+
                 $this->ip = $_POST['ip'];
-                // does the supplied email belong to a registered user?
-                $check = $wpdb->get_var("SELECT user_email FROM $wpdb->users WHERE user_email = '$this->email'");
-                if ('' != $check) {
-                    // this is a registered email
-                    $this->s2form = $this->please_log_in;
-                } else {
-                    // this is not a registered email
-                    // what should we do?
-                    if (isset($_POST['subscribe'])) {
-                        // someone is trying to subscribe
-                        // lets see if they've tried to subscribe previously
-                        if ('1' !== $this->is_public($this->email)) {
-                            // the user is unknown or inactive
-                            $this->add($this->email);
-                            $status = $this->send_confirm('add');
-                            // set a variable to denote that we've already run, and shouldn't run again
-                            $this->filtered = 1;
-                            if ($status) {
-                                $this->s2form = $this->confirmation_sent;
-                            } else {
-                                $this->s2form = $this->error;
-                            }
+                if (isset($_POST['subscribe'])) {
+                    // lets see if they've tried to subscribe previously
+                    if (!$this->is_email_subscribed($this->email)) {
+                        // the user is unknown or inactive
+                        $this->add_subscriptor($this->email, $this->ip);
+                        $status = $this->send_confirm('add');
+
+                        // set a variable to denote that we've already run, and shouldn't run again
+                        $this->filtered = 1;
+                        if ($status) {
+                            $this->bnmform = $this->confirmation_sent;
                         } else {
-                            // they're already subscribed
-                            $this->s2form = $this->already_subscribed;
+                            $this->bnmform = $this->error;
                         }
-                        $this->action = 'subscribe';
-                    } elseif (isset($_POST['unsubscribe'])) {
-                        // is this email a subscriber?
-                        if (false == $this->is_public($this->email)) {
-                            $this->s2form = $this->form . $this->not_subscribed;
-                        } else {
-                            $status = $this->send_confirm('del');
-                            // set a variable to denote that we've already run, and shouldn't run again
-                            $this->filtered = 1;
-                            if ($status) {
-                                $this->s2form = $this->confirmation_sent;
-                            } else {
-                                $this->s2form = $this->error;
-                            }
-                        }
-                        $this->action = 'unsubscribe';
+                    } else {
+                        // they're already subscribed
+                        $this->bnmform = $this->already_subscribed;
                     }
+                    $this->action = 'subscribe';
+                } elseif (isset($_POST['unsubscribe'])) {
+                    if (!$this->is_email_subscribed($this->email)) {
+                        $this->bnmform = $this->form . $this->not_subscribed;
+                    } else {
+                        $status = $this->send_confirm('del');
+                        $this->filtered = 1;
+                        if ($status) {
+                            $this->bnmform = $this->confirmation_sent;
+                        } else {
+                            $this->bnmform = $this->error;
+                        }
+                    }
+                    $this->action = 'unsubscribe';
                 }
             }
         }
-        return $this->s2form;
+        return $this->bnmform;
     }
 
     /* Performs string substitutions for bnm mail tags
@@ -370,11 +350,7 @@ class BreakingNewsMail_Controller {
         }
         $string = str_replace("{DATE}", $this->post_date, $string);
         $string = str_replace("{TIME}", $this->post_time, $string);
-        $string = str_replace("{MYNAME}", stripslashes($this->myname), $string);
-        $string = str_replace("{EMAIL}", $this->myemail, $string);
-        $string = str_replace("{AUTHORNAME}", stripslashes($this->authorname), $string);
         $string = str_replace("{CATS}", $this->post_cat_names, $string);
-        $string = str_replace("{TAGS}", $this->post_tag_names, $string);
         $string = str_replace("{COUNT}", $this->post_count, $string);
 
         return $string;
@@ -395,21 +371,21 @@ class BreakingNewsMail_Controller {
         if ('html' == $type) {
             $headers = $this->headers('html');
             if ('yes' == $this->bnm_options['stylesheet']) {
-                $mailtext = apply_filters('s2_html_email', "<html><head><title>" . $subject . "</title><link rel=\"stylesheet\" href=\"" . get_stylesheet_uri() . "\" type=\"text/css\" media=\"screen\" /></head><body>" . $message . "</body></html>", $subject, $message);
+                $mailtext = apply_filters('bnm_html_email', "<html><head><title>" . $subject . "</title><link rel=\"stylesheet\" href=\"" . get_stylesheet_uri() . "\" type=\"text/css\" media=\"screen\" /></head><body>" . $message . "</body></html>", $subject, $message);
             } else {
-                $mailtext = apply_filters('s2_html_email', "<html><head><title>" . $subject . "</title></head><body>" . $message . "</body></html>", $subject, $message);
+                $mailtext = apply_filters('bnm_html_email', "<html><head><title>" . $subject . "</title></head><body>" . $message . "</body></html>", $subject, $message);
             }
         } else {
             $headers = $this->headers();
             $message = preg_replace('|&[^a][^m][^p].{0,3};|', '', $message);
             $message = preg_replace('|&amp;|', '&', $message);
             $message = wordwrap(strip_tags($message), 80, "\n");
-            $mailtext = apply_filters('s2_plain_email', $message);
+            $mailtext = apply_filters('bnm_plain_email', $message);
         }
 
         // Replace any escaped html symbols in subject then apply filter
         $subject = html_entity_decode($subject, ENT_QUOTES);
-        $subject = apply_filters('s2_email_subject', $subject);
+        $subject = apply_filters('bnm_email_subject', $subject);
 
         // Construct BCC headers for sending or send individual emails
         $bcc = '';
@@ -439,7 +415,7 @@ class BreakingNewsMail_Controller {
                     continue;
                 }
                 // and NOT the sender's email, since they'll get a copy anyway
-                if (!empty($recipient) && $this->myemail != $recipient) {
+                if (!empty($recipient) && $this->sender_email != $recipient) {
                     ('' == $bcc) ? $bcc = "Bcc: $recipient" : $bcc .= ", $recipient";
                     // Bcc Headers now constructed by phpmailer class
                 }
@@ -456,7 +432,7 @@ class BreakingNewsMail_Controller {
                     continue;
                 }
                 // and NOT the sender's email, since they'll get a copy anyway
-                if (!empty($recipient) && $this->myemail != $recipient) {
+                if (!empty($recipient) && $this->sender_email != $recipient) {
                     ('' == $bcc) ? $bcc = "Bcc: $recipient" : $bcc .= ", $recipient";
                     // Bcc Headers now constructed by phpmailer class
                 }
@@ -479,10 +455,10 @@ class BreakingNewsMail_Controller {
         if (isset($batch) && !empty($batch)) {
             foreach ($batch as $bcc) {
                 $newheaders = $headers . "$bcc\n";
-                $status = @wp_mail($this->myemail, $subject, $mailtext, $newheaders);
+                $status = @wp_mail($this->sender_email, $subject, $mailtext, $newheaders);
             }
         } else {
-            $status = @wp_mail($this->myemail, $subject, $mailtext, $headers);
+            $status = @wp_mail($this->sender_email, $subject, $mailtext, $headers);
         }
         return $status;
     }
@@ -495,32 +471,24 @@ class BreakingNewsMail_Controller {
      */
 
     function construct_standard__email_headers($type = 'text') {
-        if (empty($this->myname) || empty($this->myemail)) {
-            if ($this->bnm_options['sender'] == 'blogname') {
-                $this->myname = html_entity_decode(get_option('blogname'), ENT_QUOTES);
-                $this->myemail = get_option('admin_email');
-            } else {
-                $admin = $this->get_userdata($this->bnm_options['sender']);
-                $this->myname = html_entity_decode($admin->display_name, ENT_QUOTES);
-                $this->myemail = $admin->user_email;
-                // fail safe to ensure sender details are not empty
-                if (empty($this->myname)) {
-                    $this->myname = html_entity_decode(get_option('blogname'), ENT_QUOTES);
+        if (empty($this->sender_name) || empty($this->sender_email)) {
+
+            $this->sender_email = $this->bnm_options['sender_email'];
+            $this->sender_name = html_entity_decode(get_option('blogname'), ENT_QUOTES);
+
+            if (empty($this->sender_email)) {
+                // Get the site domain and get rid of www.
+                $sitename = strtolower($_SERVER['SERVER_NAME']);
+                if (substr($sitename, 0, 4) == 'www.') {
+                    $sitename = substr($sitename, 4);
                 }
-                if (empty($this->myemail)) {
-                    // Get the site domain and get rid of www.
-                    $sitename = strtolower($_SERVER['SERVER_NAME']);
-                    if (substr($sitename, 0, 4) == 'www.') {
-                        $sitename = substr($sitename, 4);
-                    }
-                    $this->myemail = 'wordpress@' . $sitename;
-                }
+                $this->sender_email = 'wordpress@' . $sitename;
             }
         }
 
-        $header['From'] = $this->myname . " <" . $this->myemail . ">";
-        $header['Reply-To'] = $this->myname . " <" . $this->myemail . ">";
-        $header['Return-path'] = "<" . $this->myemail . ">";
+        $header['From'] = $this->sender_name . " <" . $this->sender_email . ">";
+        $header['Reply-To'] = $this->sender_name . " <" . $this->sender_email . ">";
+        $header['Return-path'] = "<" . $this->sender_email . ">";
         $header['Precedence'] = "list\nList-Id: " . html_entity_decode(get_option('blogname'), ENT_QUOTES) . "";
         if ($type == 'html') {
             // To send HTML mail, the Content-Type header must be set
@@ -530,7 +498,7 @@ class BreakingNewsMail_Controller {
         }
 
         // apply header filter to allow on-the-fly amendments
-        $header = apply_filters('s2_email_headers', $header);
+        $header = apply_filters('bnm_email_headers', $header);
         // collapse the headers using $key as the header name
         foreach ($header as $key => $value) {
             $headers[$key] = $key . ": " . $value;
@@ -559,10 +527,7 @@ class BreakingNewsMail_Controller {
             return $link;
         }
     }
-    
-    
-    
-    
+
     /*  Send confirmation email to a public subscriber
      * @since 1
      *
@@ -570,7 +535,7 @@ class BreakingNewsMail_Controller {
      * @return   boolean
      */
 
-    function send_confirm($what = '', $is_remind = false) {       
+    function send_confirm($what = '', $is_remind = false) {
         if (!$this->email || !$what) {
             return false;
         }
@@ -622,75 +587,6 @@ class BreakingNewsMail_Controller {
         }
     }
 
-    /* Confirm request from the link emailed to the user and email the adminvalidate if an email is already registered
-     * @since 1
-     *
-     * @param    confirmed    $confirmed    users email
-     * @return   boolean
-     */
-
-    function send_confirm_request($content = '') {
-        global $wpdb;
-
-        if (1 == $this->filtered) {
-            return $content;
-        }
-
-        $code = $_GET['bnm'];
-        $action = intval(substr($code, 0, 1));
-        $hash = substr($code, 1, 32);
-        $id = intval(substr($code, 33));
-        if ($id) {
-            $this->email = $this->is_email_subscribed($this->get_email($id));
-            if (!$this->email || $hash !== md5($this->email)) {
-                return $this->no_such_email;
-            }
-        } else {
-            return $this->no_such_email;
-        }
-
-        // get current status of email so messages are only sent once per emailed link
-        $current = $this->is_public($this->email);
-
-        if ('1' == $action) {
-            // make this subscription active
-            $this->message = $this->added;
-            if ('1' != $current) {
-                $this->ip = $_SERVER['REMOTE_ADDR'];
-                $this->toggle($this->email);
-            }
-            $this->filtered = 1;
-        } elseif ('0' == $action) {
-            // remove this subscriber
-            $this->message = $this->deleted;
-            if ('0' != $current) {
-                $this->delete($this->email);
-                if ($this->bnm_options['admin_email'] == 'unsubs' || $this->bnm_options['admin_email'] == 'both') {
-                    ( '' == get_option('blogname') ) ? $subject = "" : $subject = "[" . stripslashes(html_entity_decode(get_option('blogname'), ENT_QUOTES)) . "] ";
-                    $subject .= __('New Unsubscription', 'bnm');
-                    $subject = html_entity_decode($subject, ENT_QUOTES);
-                    $message = $this->email . " " . __('unsubscribed from email notifications!', 'bnm');
-                    $role = array('fields' => array('user_email'), 'role' => 'administrator');
-                    $wp_user_query = get_users($role);
-                    foreach ($wp_user_query as $user) {
-                        $recipients[] = $user->user_email;
-                    }
-                    $headers = $this->headers();
-                    // send individual emails so we don't reveal admin emails to each other
-                    foreach ($recipients as $recipient) {
-                        @wp_mail($recipient, $subject, $message, $headers);
-                    }
-                }
-            }
-            $this->filtered = 1;
-        }
-
-        if ('' != $this->message) {
-            return $this->message;
-        }
-    }
-    
-
     /*  Sends an email notification of a new post
      * @since 1
      *
@@ -703,7 +599,7 @@ class BreakingNewsMail_Controller {
             return $post;
         }
 
-        if ($this->s2_mu) {
+        if ($this->bnm_mu) {
             global $switched;
             if ($switched) {
                 return;
@@ -712,42 +608,15 @@ class BreakingNewsMail_Controller {
 
         if ($preview == '') {
             // we aren't sending a Preview to the current user so carry out checks
-            $s2mail = get_post_meta($post->ID, 's2mail', true);
-            if ((isset($_POST['s2_meta_field']) && $_POST['s2_meta_field'] == 'no') || strtolower(trim($s2mail)) == 'no') {
+            $bnmmail = get_post_meta($post->ID, 'bnmmail', true);
+            if ((isset($_POST['bnm_meta_field']) && $_POST['bnm_meta_field'] == 'no') || strtolower(trim($bnmmail)) == 'no') {
                 return $post;
             }
 
-            // are we doing daily digests? If so, don't send anything now
-            if ($this->bnm_options['email_freq'] != 'never') {
-                return $post;
-            }
-
-            // is the current post of a type that should generate a notification email?
-            // uses s2_post_types filter to allow for custom post types in WP 3.0
-            if ($this->bnm_options['pages'] == 'yes') {
-                $s2_post_types = array('page', 'post');
-            } else {
-                $s2_post_types = array('post');
-            }
-            $s2_post_types = apply_filters('s2_post_types', $s2_post_types);
-            if (!in_array($post->post_type, $s2_post_types)) {
-                return $post;
-            }
-
-            // Are we sending notifications for password protected posts?
-            if ($this->bnm_options['password'] == "no" && $post->post_password != '') {
-                return $post;
-            }
-
-            // Is the post assigned to a format for which we should not be sending posts
-            $post_format = get_post_format($post->ID);
-            $excluded_formats = explode(',', $this->bnm_options['exclude_formats']);
-            if ($post_format !== false && in_array($post_format, $excluded_formats)) {
-                return $post;
-            }
 
             $post_cats = wp_get_post_categories($post->ID);
             $check = false;
+
             // is the current post assigned to any categories
             // which should not generate a notification email?
             foreach (explode(',', $this->bnm_options['exclude']) as $cat) {
@@ -757,38 +626,17 @@ class BreakingNewsMail_Controller {
             }
 
             if ($check) {
-                // hang on -- can registered users subscribe to
-                // excluded categories?
-                if ('0' == $this->bnm_options['reg_override']) {
-                    // nope? okay, let's leave
-                    return $post;
-                }
-            }
-
-            // Are we sending notifications for Private posts?
-            // Action is added if we are, but double check option and post status
-            if ($this->bnm_options['private'] == "yes" && $post->post_status == 'private') {
-                // don't send notification to public users
-                $check = true;
+                return $post;
             }
 
             // lets collect our subscribers
             if (!$check) {
-                // if this post is assigned to an excluded
-                // category, or is a private post then
-                // don't send public subscribers a notification
-                $public = $this->get_public();
+                $public = $this->get_all_emails();
             }
-            if ($post->post_type == 'page') {
-                $post_cats_string = get_all_category_ids();
-            } else {
-                $post_cats_string = implode(',', $post_cats);
-            }
-            $registered = $this->get_registered("cats=$post_cats_string");
 
-            // do we have subscribers?
+            $post_cats_string = implode(',', $post_cats);
+
             if (empty($public) && empty($registered)) {
-                // if not, no sense doing anything else
                 return $post;
             }
         }
@@ -800,32 +648,18 @@ class BreakingNewsMail_Controller {
         $this->post_date = get_the_time(get_option('date_format'));
         $this->post_time = get_the_time();
 
-        $author = get_userdata($post->post_author);
-        $this->authorname = $author->display_name;
 
-        // do we send as admin, or post author?
-        if ('author' == $this->bnm_options['sender']) {
-            // get author details
-            $user = &$author;
-            $this->myemail = $user->user_email;
-            $this->myname = html_entity_decode($user->display_name, ENT_QUOTES);
-        } elseif ('blogname' == $this->bnm_options['sender']) {
-            $this->myemail = get_option('admin_email');
-            $this->myname = html_entity_decode(get_option('blogname'), ENT_QUOTES);
-        } else {
-            // get admin details
-            $user = $this->get_userdata($this->bnm_options['sender']);
-            $this->myemail = $user->user_email;
-            $this->myname = html_entity_decode($user->display_name, ENT_QUOTES);
-        }
+
+        $this->sender_email = $this->bnm_options['sender_email'];
+        $this->sender_name = html_entity_decode(get_option('blogname'), ENT_QUOTES);
 
         $this->post_cat_names = implode(', ', wp_get_post_categories($post->ID, array('fields' => 'names')));
-        $this->post_tag_names = implode(', ', wp_get_post_tags($post->ID, array('fields' => 'names')));
+
 
         // Get email subject
         $subject = stripslashes(strip_tags($this->substitute_email_tags($this->bnm_options['notification_subject'])));
         // Get the message template
-        $mailtext = apply_filters('s2_email_template', $this->bnm_options['mailtext']);
+        $mailtext = apply_filters('bnm_email_template', $this->bnm_options['mailtext']);
         $mailtext = stripslashes($this->substitute_email_tags($mailtext));
 
         $plaintext = $post->post_content;
@@ -895,14 +729,14 @@ class BreakingNewsMail_Controller {
         $html_excerpt_body = str_replace("{POST}", $html_excerpt, $html_excerpt_body);
 
         if ($preview != '') {
-            $this->myemail = $preview;
-            $this->myname = __('Plain Text Excerpt Preview', 'bnm');
+            $this->sender_email = $preview;
+            $this->sender_name = 'Plain Text Excerpt Preview';
             $this->deliver_email(array($preview), $subject, $excerpt_body);
-            $this->myname = __('Plain Text Full Preview', 'bnm');
+            $this->sender_name = 'Plain Text Full Preview';
             $this->deliver_email(array($preview), $subject, $full_body);
-            $this->myname = __('HTML Excerpt Preview', 'bnm');
+            $this->sender_name = 'HTML Excerpt Preview';
             $this->deliver_email(array($preview), $subject, $html_excerpt_body, 'html');
-            $this->myname = __('HTML Full Preview', 'bnm');
+            $this->sender_name = 'HTML Full Preview';
             $this->deliver_email(array($preview), $subject, $html_body, 'html');
         } else {
             // first we send plaintext summary emails
@@ -914,22 +748,22 @@ class BreakingNewsMail_Controller {
             } else {
                 $recipients = array_merge((array) $public, (array) $registered);
             }
-            $recipients = apply_filters('s2_send_plain_excerpt_suscribers', $recipients, $post->ID);
+            $recipients = apply_filters('bnm_send_plain_excerpt_suscribers', $recipients, $post->ID);
             $this->deliver_email($recipients, $subject, $excerpt_body);
 
             // next we send plaintext full content emails
             $recipients = $this->get_registered("cats=$post_cats_string&format=post&author=$post->post_author");
-            $recipients = apply_filters('s2_send_plain_fullcontent_suscribers', $recipients, $post->ID);
+            $recipients = apply_filters('bnm_send_plain_fullcontent_suscribers', $recipients, $post->ID);
             $this->deliver_email($recipients, $subject, $full_body);
 
             // next we send html excerpt content emails
             $recipients = $this->get_registered("cats=$post_cats_string&format=html_excerpt&author=$post->post_author");
-            $recipients = apply_filters('s2_send_html_excerpt_suscribers', $recipients, $post->ID);
+            $recipients = apply_filters('bnm_send_html_excerpt_suscribers', $recipients, $post->ID);
             $this->deliver_email($recipients, $subject, $html_excerpt_body, 'html');
 
             // finally we send html full content emails
             $recipients = $this->get_registered("cats=$post_cats_string&format=html&author=$post->post_author");
-            $recipients = apply_filters('s2_send_html_fullcontent_suscribers', $recipients, $post->ID);
+            $recipients = apply_filters('bnm_send_html_fullcontent_suscribers', $recipients, $post->ID);
             $this->deliver_email($recipients, $subject, $html_body, 'html');
         }
     }
@@ -942,7 +776,7 @@ class BreakingNewsMail_Controller {
      */
 
     function save_settings() {
-        
+        update_option('bnm_options', $this->bnm_options);
     }
 
     /* Export subscriber emails and other details to CSV
@@ -955,25 +789,17 @@ class BreakingNewsMail_Controller {
     function exportSubscribersToCSV() {
         $confirmed = $this->get_public();
         $unconfirmed = $this->get_public(0);
-        if ('all' == $what) {
-            $subscribers = array_merge((array) $confirmed, (array) $unconfirmed, (array) $this->get_all_registered());
-        } elseif ('public' == $what) {
-            $subscribers = array_merge((array) $confirmed, (array) $unconfirmed);
+        if ('all' == $what || 'all_users' == $what) {
+            $subscribers = array_merge((array) $confirmed, (array) $unconfirmed, (array) $this->get_all_emails());
         } elseif ('confirmed' == $what) {
             $subscribers = $confirmed;
         } elseif ('unconfirmed' == $what) {
             $subscribers = $unconfirmed;
-        } elseif (is_numeric($what)) {
-            $subscribers = $this->get_registered("cats=$what");
-        } elseif ('registered' == $what) {
-            $subscribers = $this->get_registered();
-        } elseif ('all_users' == $what) {
-            $subscribers = $this->get_all_registered();
         }
 
         natcasesort($subscribers);
 
-        $exportcsv = "User Email,User Name";
+        $exportcsv = "User Email";
         $all_cats = $this->all_cats(false, 'ID');
 
         foreach ($all_cats as $cat) {
@@ -983,29 +809,47 @@ class BreakingNewsMail_Controller {
         $exportcsv .="\r\n";
 
         foreach ($subscribers as $subscriber) {
-            if ($this->is_registered($subscriber)) {
-                $user_ID = $this->get_user_id($subscriber);
-                $user_info = get_userdata($user_ID);
-
-                $cats = explode(',', get_user_meta($user_info->ID, $this->get_usermeta_keyname('bnm_subscribed'), true));
-                $subscribed_cats = '';
-                foreach ($cat_ids as $cat) {
-                    (in_array($cat, $cats)) ? $subscribed_cats .=",Yes" : $subscribed_cats .=",No";
-                }
-
-                $exportcsv .= $user_info->user_email . ',';
-                $exportcsv .= $user_info->display_name;
-                $exportcsv .= $subscribed_cats . "\r\n";
-            } else {
-                if (in_array($subscriber, $confirmed)) {
-                    $exportcsv .= $subscriber . ',' . __('Confirmed Public Subscriber', 'bnm') . "\r\n";
-                } elseif (in_array($subscriber, $unconfirmed)) {
-                    $exportcsv .= $subscriber . ',' . __('Unconfirmed Public Subscriber', 'bnm') . "\r\n";
-                }
+            if (in_array($subscriber, $confirmed)) {
+                $exportcsv .= $subscriber . ',' . __('Confirmed Public Subscriber', 'bnm') . "\r\n";
+            } elseif (in_array($subscriber, $unconfirmed)) {
+                $exportcsv .= $subscriber . ',' . __('Unconfirmed Public Subscriber', 'bnm') . "\r\n";
             }
         }
 
         return $exportcsv;
+    }
+
+    /**
+      Get an object of all categories, include default and custom type
+     */
+    function all_cats($exclude = false, $orderby = 'slug') {
+        $all_cats = array();
+        $bnm_taxonomies = array('category');
+        $bnm_taxonomies = apply_filters('bnm_taxonomies', $bnm_taxonomies);
+
+        foreach ($bnm_taxonomies as $taxonomy) {
+            if (taxonomy_exists($taxonomy)) {
+                $all_cats = array_merge($all_cats, get_categories(array('hide_empty' => false, 'orderby' => $orderby, 'taxonomy' => $taxonomy)));
+            }
+        }
+
+
+
+        if ($exclude === true) {
+            // remove excluded categories from the returned object
+            $excluded = explode(',', $this->bnm_options['exclude']);
+
+            // need to use $id like this as this is a mixed array / object
+            $id = 0;
+            foreach ($all_cats as $cat) {
+                if (in_array($cat->term_id, $excluded)) {
+                    unset($all_cats[$id]);
+                }
+                $id++;
+            }
+        }
+
+        return $all_cats;
     }
 
 }
