@@ -20,7 +20,6 @@ class BreakingNewsMail_Controller {
     private $post_time = '';
     private $sender_name = '';
     private $sender_email = '';
-    private $signup_dates = array();
     private $filtered = 0;
     private $preview_email = false;
     // state variables used to affect processing
@@ -50,6 +49,7 @@ class BreakingNewsMail_Controller {
 
     function __construct() {
         $this->bnm_options = get_option('bnm_options');
+        $this->messages_to_show();
     }
 
     /**
@@ -251,12 +251,12 @@ class BreakingNewsMail_Controller {
 
         // if a button is hidden, show only other
         /* if ($hide == 'subscribe') {
-          $this->input_form_action = "<input type=\"submit\" name=\"unsubscribe\" value=\"" . __('Unsubscribe', 'bnm') . "\" />";
+          $this->input_form_action = "<input type=\"submit\" name=\"unsubscribe\" value=\"" . 'Unsubscribe' . "\" />";
           } elseif ($hide == 'unsubscribe') {
-          $this->input_form_action = "<input type=\"submit\" name=\"subscribe\" value=\"" . __('Subscribe', 'bnm') . "\" />";
+          $this->input_form_action = "<input type=\"submit\" name=\"subscribe\" value=\"" . 'Subscribe' . "\" />";
           } else {
           // both form input actions
-          $this->input_form_action = "<input type=\"submit\" name=\"subscribe\" value=\"" . __('Subscribe', 'bnm') . "\" />&nbsp;<input type=\"submit\" name=\"unsubscribe\" value=\"" . __('Unsubscribe', 'bnm') . "\" />";
+          $this->input_form_action = "<input type=\"submit\" name=\"subscribe\" value=\"" . 'Subscribe' . "\" />&nbsp;<input type=\"submit\" name=\"unsubscribe\" value=\"" . 'Unsubscribe' . "\" />";
           } */
 
         // if ID is provided, get permalink
@@ -269,9 +269,9 @@ class BreakingNewsMail_Controller {
         }
         /* // build default form
           if ($nojs == 'true') {
-          $this->form = "<form method=\"post\" action=\"" . $url . "\"><input type=\"hidden\" name=\"ip\" value=\"" . $_SERVER['REMOTE_ADDR'] . "\" /><p><label for=\"bnmemail\">" . __('Your email:', 'bnm') . "</label><br /><input type=\"text\" name=\"email\" id=\"bnmemail\" value=\"\" size=\"" . $size . "\" /></p><p>" . $this->input_form_action . "</p></form>";
+          $this->form = "<form method=\"post\" action=\"" . $url . "\"><input type=\"hidden\" name=\"ip\" value=\"" . $_SERVER['REMOTE_ADDR'] . "\" /><p><label for=\"bnmemail\">" . 'Your email:' . "</label><br /><input type=\"text\" name=\"email\" id=\"bnmemail\" value=\"\" size=\"" . $size . "\" /></p><p>" . $this->input_form_action . "</p></form>";
           } else {
-          $this->form = "<form method=\"post\" action=\"" . $url . "\"><input type=\"hidden\" name=\"ip\" value=\"" . $_SERVER['REMOTE_ADDR'] . "\" /><p><label for=\"bnmemail\">" . __('Your email:', 'bnm') . "</label><br /><input type=\"text\" name=\"email\" id=\"bnmemail\" value=\"" . __('Enter email address...', 'bnm') . "\" size=\"" . $size . "\" onfocus=\"if (this.value == '" . __('Enter email address...', 'bnm') . "') {this.value = '';}\" onblur=\"if (this.value == '') {this.value = '" . __('Enter email address...', 'bnm') . "';}\" /></p><p>" . $this->input_form_action . "</p></form>\r\n";
+          $this->form = "<form method=\"post\" action=\"" . $url . "\"><input type=\"hidden\" name=\"ip\" value=\"" . $_SERVER['REMOTE_ADDR'] . "\" /><p><label for=\"bnmemail\">" . 'Your email:' . "</label><br /><input type=\"text\" name=\"email\" id=\"bnmemail\" value=\"" . 'Enter email address...' . "\" size=\"" . $size . "\" onfocus=\"if (this.value == '" . 'Enter email address...' . "') {this.value = '';}\" onblur=\"if (this.value == '') {this.value = '" . 'Enter email address...' . "';}\" /></p><p>" . $this->input_form_action . "</p></form>\r\n";
           }
           $this->bnmform = $this->form; */
 
@@ -775,8 +775,250 @@ class BreakingNewsMail_Controller {
      * @return   boolean
      */
 
-    function save_settings() {
+    function save_settings($_POST) {        
+        if (!empty($_POST['tracking'])) {
+            $this->bnm_options['tracking'] = $_POST['tracking'];
+        }
+        if (!empty($_POST['sender_email'])) {
+            $this->bnm_options['sender_email'] = $_POST['sender_email'];
+        }
+        
+        if (!empty($_POST['notification_subject'])) {
+            $this->bnm_options['notification_subject'] = $_POST['notification_subject'];
+        }
+        if (!empty($_POST['mailtext'])) {
+            $this->bnm_options['mailtext'] = $_POST['mailtext'];
+        }
+        
+        if (!empty($_POST['confirm_subject'])) {
+            $this->bnm_options['confirm_subject'] = $_POST['confirm_subject'];
+        }
+        if (!empty($_POST['confirm_email'])) {
+            $this->bnm_options['confirm_email'] = $_POST['confirm_email'];
+        }
+        if (!empty($_POST['remind_subject'])) {
+            $this->bnm_options['remind_subject'] = $_POST['remind_subject'];
+        }
+        if (!empty($_POST['remind_email'])) {
+            $this->bnm_options['remind_email'] = $_POST['remind_email'];
+        }
+        // excluded categories
+        if (!empty($_POST['category'])) {
+            sort($_POST['category']);
+            $exclude_cats = implode(',', $_POST['category']);
+        } else {
+            $exclude_cats = '';
+        }
+        $this->bnm_options['exclude'] = $exclude_cats;
+
+        echo "<div id=\"message\" class=\"updated fade\"><p><strong>$this->options_saved</strong></p></div>";
         update_option('bnm_options', $this->bnm_options);
+    }
+    
+    
+    function process_subscribers_admin_form($_POST){
+         global $wpdb, $bnmnonce;
+            $all_users = $this->get_all_emails();
+
+// was anything POSTed ?
+            if (isset($_POST['bnm_admin'])) {
+                check_admin_referer('bnm-manage_subscribers' . $bnmnonce);
+                if ($_POST['addresses']) {
+                    $sub_error = '';
+                    $unsub_error = '';
+                    foreach (preg_split("|[\s,]+|", $_POST['addresses']) as $email) {
+                        $email = $this->sanitize_email($email);
+                        if (is_email($email) && $_POST['subscribe']) {
+                            if ($this->is_email_subscribed($email) !== false) {
+                                ('' == $sub_error) ? $sub_error = "$email" : $sub_error .= ", $email";
+                                continue;
+                            }
+                            $this->add_subscriptor($email, true);
+                            $message = "<div id=\"message\" class=\"updated fade\"><p><strong>" . 'Address(es) subscribed!' . "</strong></p></div>";
+                        } elseif (is_email($email) && $_POST['unsubscribe']) {
+                            if ($this->is_email_subscribed($email) === false) {
+                                ('' == $unsub_error) ? $unsub_error = "$email" : $unsub_error .= ", $email";
+                                continue;
+                            }
+                            $this->delete_subscriptor($email);
+                            $message = "<div id=\"message\" class=\"updated fade\"><p><strong>" . 'Address(es) unsubscribed!' . "</strong></p></div>";
+                        }
+                    }
+                    if ($sub_error != '') {
+                        echo "<div id=\"message\" class=\"error\"><p><strong>" . 'Some emails were not processed, the following were already subscribed' . ":<br />$sub_error</strong></p></div>";
+                    }
+                    if ($unsub_error != '') {
+                        echo "<div id=\"message\" class=\"error\"><p><strong>" . 'Some emails were not processed, the following were not in the database' . ":<br />$unsub_error</strong></p></div>";
+                    }
+                    echo $message;
+                    $_POST['what'] = 'confirmed';
+                } /*elseif ($_POST['process']) {
+                    if ($_POST['delete']) {
+                        foreach ($_POST['delete'] as $address) {
+                            $this->delete_subscriptor($address);
+                        }
+                        echo "<div id=\"message\" class=\"updated fade\"><p><strong>" . 'Address(es) deleted!' . "</strong></p></div>";
+                    }
+                    if ($_POST['confirm']) {
+                        foreach ($_POST['confirm'] as $address) {
+                            $this->toggle($this->is_email($address));
+                        }
+                        $message = "<div id=\"message\" class=\"updated fade\"><p><strong>" . 'Status changed!' . "</strong></p></div>";
+                    }
+                    if ($_POST['unconfirm']) {
+                        foreach ($_POST['unconfirm'] as $address) {
+                            $this->toggle($this->is_email($address));
+                        }
+                        $message = "<div id=\"message\" class=\"updated fade\"><p><strong>" . 'Status changed!' . "</strong></p></div>";
+                    }
+                    echo $message;
+                }*/ elseif ($_POST['searchterm']) {
+                    $confirmed = $this->get_all_emails();
+                    $unconfirmed = $this->get_all_emails(0);
+                    $subscribers = array_merge((array) $confirmed, (array) $unconfirmed, (array) $all_users);
+                    foreach ($subscribers as $subscriber) {
+                        if (is_numeric(stripos($subscriber, $_POST['searchterm']))) {
+                            $result[] = $subscriber;
+                        }
+                    }
+                } /*elseif ($_POST['remind']) {
+                    //$this->remind($_POST['reminderemails']);
+                    echo "<div id=\"message\" class=\"updated fade\"><p><strong>" .'Reminder Email(s) Sent!' . "</strong></p></div>";
+                } elseif ($_POST['sub_categories'] && 'subscribe' == $_POST['manage']) {
+                    //$this->subscribe_registered_users($_POST['exportcsv'], $_POST['category']);
+                    echo "<div id=\"message\" class=\"updated fade\"><p><strong>" . 'Registered Users Subscribed!' . "</strong></p></div>";
+                } elseif ($_POST['sub_categories'] && 'unsubscribe' == $_POST['manage']) {
+                    //$this->unsubscribe_registered_users($_POST['exportcsv'], $_POST['category']);
+                    echo "<div id=\"message\" class=\"updated fade\"><p><strong>" . 'Registered Users Unsubscribed!' . "</strong></p></div>";
+                } elseif ($_POST['sub_format']) {
+                    //$this->format_change($_POST['format'], $_POST['exportcsv']);
+                    echo "<div id=\"message\" class=\"updated fade\"><p><strong>" . 'Format updated for Selected Registered Users!' . "</strong></p></div>";
+                } elseif ($_POST['sub_digest']) {
+                    //$this->digest_change($_POST['sub_category'], $_POST['exportcsv']);
+                    echo "<div id=\"message\" class=\"updated fade\"><p><strong>" . 'Digest Subscription updated for Selected Registered Users!' . "</strong></p></div>";
+                } */
+            }
+
+//Get Public Subscribers once for filter
+            $confirmed = $this->get_all_emails();
+            $unconfirmed = $this->get_all_emails(0);
+// safety check for our arrays
+            if ('' == $confirmed) {
+                $confirmed = array();
+            }
+            if ('' == $unconfirmed) {
+                $unconfirmed = array();
+            }
+            
+            if ('' == $all_users) {
+                $all_users = array();
+            }
+
+            $reminderform = false;
+            $urlpath = str_replace("\\", "/", BNM_PATH);
+            $urlpath = trailingslashit(get_option('siteurl')) . substr($urlpath, strpos($urlpath, "wp-content/"));
+            if (isset($_GET['bnmpage'])) {
+                $page = (int) $_GET['bnmpage'];
+            } else {
+                $page = 1;
+            }
+
+            if (isset($_POST['what'])) {
+                $page = 1;
+                if ('all' == $_POST['what']) {
+                    $what = 'all';
+                    $subscribers = array_merge((array) $confirmed, (array) $unconfirmed, (array) $all_users);
+                } elseif ('public' == $_POST['what']) {
+                    $what = 'public';
+                    $subscribers = array_merge((array) $confirmed, (array) $unconfirmed);
+                } elseif ('confirmed' == $_POST['what']) {
+                    $what = 'confirmed';
+                    $subscribers = $confirmed;
+                } elseif ('unconfirmed' == $_POST['what']) {
+                    $what = 'unconfirmed';
+                    $subscribers = $unconfirmed;
+                    if (!empty($subscribers)) {
+                        $reminderemails = implode(",", $subscribers);
+                        $reminderform = true;
+                    }
+                } elseif (is_numeric($_POST['what'])) {
+                    $what = intval($_POST['what']);
+                    //$subscribers = $this->get_registered("cats=$what");
+                } elseif ('registered' == $_POST['what']) {
+                    $what = 'registered';
+                    $subscribers = $registered;
+                } elseif ('all_users' == $_POST['what']) {
+                    $what = 'all_users';
+                    $subscribers = $all_users;
+                }
+            } elseif (isset($_GET['what'])) {
+                if ('all' == $_GET['what']) {
+                    $what = 'all';
+                    $subscribers = array_merge((array) $confirmed, (array) $unconfirmed, (array) $all_users);
+                } elseif ('public' == $_GET['what']) {
+                    $what = 'public';
+                    $subscribers = array_merge((array) $confirmed, (array) $unconfirmed);
+                } elseif ('confirmed' == $_GET['what']) {
+                    $what = 'confirmed';
+                    $subscribers = $confirmed;
+                } elseif ('unconfirmed' == $_GET['what']) {
+                    $what = 'unconfirmed';
+                    $subscribers = $unconfirmed;
+                    if (!empty($subscribers)) {
+                        $reminderemails = implode(",", $subscribers);
+                        $reminderform = true;
+                    }
+                } elseif (is_numeric($_GET['what'])) {
+                    $what = intval($_GET['what']);
+                   // $subscribers = $this->get_registered("cats=$what");
+                } elseif ('registered' == $_GET['what']) {
+                    $what = 'registered';
+                    $subscribers = $registered;
+                } elseif ('all_users' == $_GET['what']) {
+                    $what = 'all_users';
+                    $subscribers = $all_users;
+                }
+            } else {
+                $what = 'all';
+                $subscribers = array_merge((array) $confirmed, (array) $unconfirmed, (array) $all_users);
+            }
+            if ($_POST['searchterm'] ) {
+                $subscribers = &$result;
+                $what = 'public';
+            }
+
+            if (!empty($subscribers)) {
+                natcasesort($subscribers);
+                // Displays a page number strip - adapted from code in Akismet
+                $args['what'] = $what;
+                $total_subscribers = count($subscribers);
+                $total_pages = ceil($total_subscribers / $this->bnm_options['entries']);
+                $strip = '';
+                if ($page > 1) {
+                    $args['bnmpage'] = $page - 1;
+                    $strip .= '<a class="prev" href="' . esc_url(add_query_arg($args)) . '">&laquo; ' . 'Previous Page' . '</a>' . "\n";
+                }
+                if ($total_pages > 1) {
+                    for ($page_num = 1; $page_num <= $total_pages; $page_num++) {
+                        if ($page == $page_num) {
+                            $strip .= "<strong>Page " . $page_num . "</strong>\n";
+                        } else {
+                            if ($page_num < 3 || ( $page_num >= $page - 2 && $page_num <= $page + 2 ) || $page_num > $total_pages - 2) {
+                                $args['bnmpage'] = $page_num;
+                                $strip .= "<a class=\"page-numbers\" href=\"" . esc_url(add_query_arg($args)) . "\">" . $page_num . "</a>\n";
+                                $trunc = true;
+                            } elseif ($trunc == true) {
+                                $strip .= "...\n";
+                                $trunc = false;
+                            }
+                        }
+                    }
+                }
+                if (( $page ) * $this->bnm_options['entries'] < $total_subscribers) {
+                    $args['bnmpage'] = $page + 1;
+                    $strip .= "<a class=\"next\" href=\"" . esc_url(add_query_arg($args)) . "\">" . 'Next Page' . " &raquo;</a>\n";
+                }
+            }
     }
 
     /* Export subscriber emails and other details to CSV
@@ -810,9 +1052,9 @@ class BreakingNewsMail_Controller {
 
         foreach ($subscribers as $subscriber) {
             if (in_array($subscriber, $confirmed)) {
-                $exportcsv .= $subscriber . ',' . __('Confirmed Public Subscriber', 'bnm') . "\r\n";
+                $exportcsv .= $subscriber . ',' . 'Confirmed Public Subscriber' . "\r\n";
             } elseif (in_array($subscriber, $unconfirmed)) {
-                $exportcsv .= $subscriber . ',' . __('Unconfirmed Public Subscriber', 'bnm') . "\r\n";
+                $exportcsv .= $subscriber . ',' . 'Unconfirmed Public Subscriber' . "\r\n";
             }
         }
 
@@ -850,6 +1092,25 @@ class BreakingNewsMail_Controller {
         }
 
         return $all_cats;
+    }
+
+    function messages_to_show() {
+        $confirmation_sent = 'Confirmation sent';
+        $already_subscribed = 'Already subscribed';
+        $not_subscribed = 'Not subscribed';
+        $not_an_email = 'That is not an email';
+        $error = 'Error';
+        $mail_sent = 'Email sent';
+        $mail_failed = 'Mail failed';
+        $form = 'Form';
+        $no_such_email = 'No such email';
+        $added = 'Added';
+        $deleted = 'Deleted';
+        $subscribe = 'Subscribe';
+        $unsubscribe = 'Unsubscribe';
+        $confirm_subject = 'Confirm subject';
+        $options_saved = 'Options Saved';
+        $options_reset = 'Options Reset';
     }
 
 }

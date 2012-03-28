@@ -36,7 +36,7 @@ if (version_compare($GLOBALS['wp_version'], '3.1', '<')) {
 
 global $wpdb;
 
-//define('BNM_PATH', trailingslashit(dirname(__FILE__)));
+define('BNM_PATH', trailingslashit(dirname(__FILE__)));
 //define('BNM_DIR', trailingslashit(dirname(plugin_basename(__FILE__))));
 //define('BNM_URL', plugin_dir_url(dirname(__FILE__)) . BNM_DIR);
 define('BNM_USERS', $wpdb->get_blog_prefix() . 'bnm_users');
