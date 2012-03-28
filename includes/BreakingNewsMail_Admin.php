@@ -13,37 +13,6 @@
 class BreakingNewsMail_Admin {
 
     private $bnm_options = array();
-    private $all_unconfirmed = '';
-    private $excluded_cats = '';
-    private $post_title = '';
-    private $permalink = '';
-    private $post_date = '';
-    private $post_time = '';
-    private $signup_dates = array();
-    private $preview_email = false;
-    // state variables used to affect processing
-    private $action = '';
-    private $email = '';
-    private $message = '';
-    private $excerpt_length = 55;
-    // some messages	
-    private $confirmation_sent = '';
-    private $already_subscribed = '';
-    private $not_subscribed = '';
-    private $not_an_email = '';
-    private $barred_domain = '';
-    private $error = '';
-    private $mail_sent = '';
-    private $mail_failed = '';
-    private $form = '';
-    private $no_such_email = '';
-    private $added = '';
-    private $deleted = '';
-    private $subscribe = '';
-    private $unsubscribe = '';
-    private $confirm_subject = '';
-    private $options_saved = '';
-    private $options_reset = '';
 
     function __construct() {
         add_action('admin_menu', array(&$this, 'bnm_add_page'));
@@ -161,7 +130,7 @@ class BreakingNewsMail_Admin {
                         &nbsp;<input type="submit" class="button-primary" name="unsubscribe" value="Unsubscribe" /></p>
                 </div>
 
-                <?php // subscriber lists   ?>
+                <?php // subscriber lists    ?>
                 <div class="bnm_admin" id="bnm_current_subscribers">
                     <h2>Current Subscribers</h2>
                     <br /><br />
@@ -383,10 +352,7 @@ class BreakingNewsMail_Admin {
         }
                     ?></td></tr>
         </table> <?php
-            }
-
-           
-           
-
         }
+
+    }
             ?>

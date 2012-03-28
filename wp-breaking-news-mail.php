@@ -85,6 +85,7 @@ class WP_Breaking_News_Mail_Main {
 			email varchar(64) NOT NULL default '',
                         id_category int(11) NULL,
 			active tinyint(1) default 0,
+                        status tinyint(1) default 1,
 			date DATE default '" . date('Y-m-d') . "' NOT NULL,
 			ip char(64) NOT NULL default 'admin',
 			PRIMARY KEY (id) )  ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;");
