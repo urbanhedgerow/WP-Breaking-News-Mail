@@ -112,9 +112,6 @@ class BreakingNewsMail_Admin {
         $search_term = isset($_POST['searchterm']) ? $_POST["searchterm"] : "";
         
         $getted_subscribers = $this->objController->process_subscribers_admin_form($_POST);
-        //echo $message;
-        
-        //$getted_subscribers = $this->objController->get_subscribers($_GET, $_POST);
         
         
         $this->bnm_options = $this->objController->get_bnm_options();
@@ -124,7 +121,6 @@ class BreakingNewsMail_Admin {
             $what = $key;
             $subscribers = $value;
         }
-        
         
         
         $confirmed = $this->objController->get_all_emails();
@@ -196,7 +192,7 @@ class BreakingNewsMail_Admin {
         ?>
                     <table class="widefat" cellpadding="2" cellspacing="2" width="100%">        
                         <tr class="alternate">
-                            <td colspan="3">
+                            <td >
                                 <input type="text" name="searchterm" value="<?php  $search_term ?>" />
                             </td>
                             <td>
@@ -219,7 +215,7 @@ class BreakingNewsMail_Admin {
         <?php if (!empty($subscribers)) { ?>
                <?php if (!empty($strip)) { ?>
                             <tr>                                
-                                <td colspan="6" align="right">
+                                <td colspan="4" align="right">
                                     <?php echo $strip; ?>
                                 </td>
                             </tr>
@@ -235,45 +231,31 @@ class BreakingNewsMail_Admin {
          ?>
                             
                             
-                            <tr class="alternate" style="height:1.5em;">
-                                <td width="8%" align="center">
-                                    Confirm email
-                                </td>
-                                <td width="8%" align="center">
-                                    Unconfirm email
-                                </td>
-                                <td width="8%" align="center">
-                                    Delete email
+                            <tr class="alternate" style="height:1.5em;">                                
+                                <td width="8%" align="left">
+                                   <strong> Delete email </strong>
                                 </td>
                                 <td align="center"> 
-                                    Email                                    
+                                   <strong>  Email </strong>                                   
                                 </td>
                                 <td align="center"> 
-                                    Sign up date
+                                   <strong> Sign up date </strong>
                                 </td>
                                 <td align="center">            
-                                    IP
+                                   <strong> IP </strong>
                                 </td>
                                 
                             </tr>
-                            <tr class="">
-                                <td align="center"><input type="checkbox" name="checkall" value="confirm_checkall" />Confirm all</td>
-                                <td align="center"><input type="checkbox" name="checkall" value="unconfirm_checkall" />Unconfirm all</td>
-                                <td align="center"><input type="checkbox" name="checkall" value="delete_checkall" />Delete all</td>
-                                <td colspan ="3" align="left"><strong>Select / Unselect All</strong></td>
+                            <tr class="">                                
+                                <td colspan ="4" align="left"><input type="checkbox" name="checkall" value="delete_checkall" />Delete all (<strong>Select / Unselect All</strong>)</td>
                             </tr>
                             
             <?php foreach ($subscribers as $subscriber) { ?>
                             <tr class="<?php echo $alternate; ?>" style="height:1.5em;">
-                                <td align="left">&nbsp;&nbsp;
-            <?php if (in_array($subscriber, $confirmed)) { ?>
-                                </td>
-                                <td align="left">&nbsp;&nbsp;
-                                    <input class="unconfirm_checkall" title="Unconfirm this email address" type="checkbox" name="unconfirm[]" value="<?php echo $subscriber; ?>" />
-                                </td>
-                                <td align="left">&nbsp;&nbsp;
+                                <td align="left">
+            <?php if (in_array($subscriber, $confirmed)) { ?>                                
                                     <input class="delete_checkall" title="Delete this email address" type="checkbox" name="delete[]" value="<?php echo $subscriber; ?>" />
-                                </td>
+                                </td>                                
                                 <td align="center">
                                     <span style="color:#006600">&#x221A;&nbsp;&nbsp;</span>
                                     <a href="mailto:<?php echo $subscriber; ?>"><?php echo $subscriber; ?></a>
@@ -286,12 +268,8 @@ class BreakingNewsMail_Admin {
                                     <abbr title="<?php echo $this->objController->get_signup_ip($subscriber) ?>"> </abbr>    
                                     
                 <?php } elseif (in_array($subscriber, $unconfirmed)) { ?>
-                                   <input class="confirm_checkall" title="Confirm this email address" type="checkbox" name="confirm[]" value="<?php echo $subscriber; ?>" />
-                                </td>
-                                <td align="left"></td>
-                                <td align="left">&nbsp;&nbsp;
-                                  <input class="delete_checkall" title="Delete this email address" type="checkbox" name="delete[]" value="<?php echo $subscriber; ?>" />
-                                </td>
+                                    <input class="delete_checkall" title="Delete this email address" type="checkbox" name="delete[]" value="<?php echo $subscriber; ?>" />
+                                </td>                                
                                 <td align="center">
                                     <span style="color:#FF0000">&nbsp;! (unconfirmed)&nbsp;</span>
                                     <a href="mailto:<?php echo $subscriber; ?>"><?php echo $subscriber; ?></a>
@@ -310,9 +288,9 @@ class BreakingNewsMail_Admin {
          }
          if (empty($subscribers)){
              if ($search_term) { ?>
-                      <tr><td colspan="6" align="center"><b>No matching subscribers found</b></td></tr>
+                      <tr><td colspan="4" align="center"><b>No matching subscribers found</b></td></tr>
               <?php } else { ?>
-              <tr><td colspan="6" align="center"><b>There are not subscribers yet</b></td></tr>
+              <tr><td colspan="4" align="center"><b>There are not subscribers yet</b></td></tr>
              <?php }
           }
           if (!empty($subscribers)) { ?>
