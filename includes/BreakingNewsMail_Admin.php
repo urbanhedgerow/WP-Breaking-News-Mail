@@ -28,10 +28,12 @@ class BreakingNewsMail_Admin {
         add_submenu_page('bnm-menu', 'Subscribers', 'Subscribers', 'manage_options', 'bnm_settings', array(&$this, 'bnm_subscribers_page'));
     }
 
+   
+    
     // Draw the option page
     function bnm_settings_page() {
-        $this->bnm_options = get_option('bnm_options');
-       
+         $this->bnm_options = $this->objController->save_settings($_POST);
+        
         ?>
         <div class="wrap">
             <div id="icon-tools" class="icon32"></div>
@@ -81,26 +83,86 @@ class BreakingNewsMail_Admin {
                                     <dt><b>{CATS}</b></dt><dd> the post's assigned categories </dd> 
                                     <dt><b>{TAGS}</b></dt><dd> the post's assigned Tags </dd> 
                                 </dl></td></tr><tr><td>
-                                Subscribe / Unsubscribe confirmation email:<br /> 
+                                Subscribe Subscribe confirmation email:<br /> 
                                 Subject Line:  
                                 <input type="text" name="confirm_subject" value="<?php echo stripslashes($this->bnm_options['confirm_subject']) ?>" size="30" /><br /> 
                                 <textarea rows="9" cols="60" name="confirm_email"><?php echo stripslashes($this->bnm_options['confirm_email']) ?></textarea><br /><br /> 
-                            </td></tr><tr valign="top"><td> 
-                                Reminder email to Unconfirmed Subscribers:<br /> 
+                            </td></tr>
+                        <tr valign="top"><td> 
+                                Unsubscribe confirmation confirmation email:<br /> 
                                 Subject Line:  
-                                <input type="text" name="remind_subject" value="<?php echo stripslashes($this->bnm_options['remind_subject']) ?>" size="30" /><br /> 
-                                <textarea rows="9" cols="60" name="remind_email"><?php echo stripslashes($this->bnm_options['remind_email']) ?></textarea><br /><br /> 
+                                <input type="text" name="remind_subject" value="<?php echo stripslashes($this->bnm_options['unsubscribe_subject']) ?>" size="30" /><br /> 
+                                <textarea rows="9" cols="60" name="remind_email"><?php echo stripslashes($this->bnm_options['unsubscribe_email']) ?></textarea><br /><br /> 
                             </td></tr></table><br /> 
                 </div> 
                 <input name="Submit" type="submit" value="Save Changes" />
             </form></div>
         <?php
-        $this->objController->save_settings($_POST);
+       
     }
 
     // Draw the option page
     function bnm_subscribers_page() {
-        global $wpdb, $bnmnonce;
+      global $bnmnonce;
+        if (isset($_GET['bnmpage'])) {
+            $page = (int) $_GET['bnmpage'];
+        } else {
+            $page = 1;
+        }
+        $search_term = isset($_POST['searchterm']) ? $_POST["searchterm"] : "";
+        
+        $getted_subscribers = $this->objController->process_subscribers_admin_form($_POST);
+        //echo $message;
+        
+        //$getted_subscribers = $this->objController->get_subscribers($_GET, $_POST);
+        
+        
+        $this->bnm_options = $this->objController->get_bnm_options();
+        
+        $subscribers = Array();
+        foreach ($getted_subscribers as $key => $value) {
+            $what = $key;
+            $subscribers = $value;
+        }
+        
+        
+        
+        $confirmed = $this->objController->get_all_emails();
+        $unconfirmed = $this->objController->get_all_emails(0);
+        
+        /* Pagination */
+        if (!empty($subscribers)) {
+            natcasesort($subscribers);
+            // Displays a page number strip - adapted from code in Akismet
+            $args['what'] = $what;
+            $total_subscribers = count($subscribers);
+            $total_pages = ceil($total_subscribers / $this->bnm_options['entries']);
+            $strip = '';
+            if ($page > 1) {
+                $args['bnmpage'] = $page - 1;
+                $strip .= '<a class="prev" href="' . esc_url(add_query_arg($args)) . '">&laquo; ' . 'Previous Page' . '</a>' . "\n";
+            }
+            if ($total_pages > 1) {
+                for ($page_num = 1; $page_num <= $total_pages; $page_num++) {
+                    if ($page == $page_num) {
+                        $strip .= "<strong>Page " . $page_num . "</strong>\n";
+                    } else {
+                        if ($page_num < 3 || ( $page_num >= $page - 2 && $page_num <= $page + 2 ) || $page_num > $total_pages - 2) {
+                            $args['bnmpage'] = $page_num;
+                            $strip .= "<a class=\"page-numbers\" href=\"" . esc_url(add_query_arg($args)) . "\">" . $page_num . "</a>\n";
+                            $trunc = true;
+                        } elseif ($trunc == true) {
+                            $strip .= "...\n";
+                            $trunc = false;
+                        }
+                    }
+                }
+            }
+            if (( $page ) * $this->bnm_options['entries'] < $total_subscribers) {
+                $args['bnmpage'] = $page + 1;
+                $strip .= "<a class=\"next\" href=\"" . esc_url(add_query_arg($args)) . "\">" . 'Next Page' . " &raquo;</a>\n";
+            }
+        }
       
         ?>
         <div class="wrap">
@@ -119,7 +181,8 @@ class BreakingNewsMail_Admin {
                     <p>Enter addresses, one per line or comma-separated<br />
                         <textarea rows="2" cols="80" name="addresses"></textarea></p>
                     <input type="hidden" name="bnm_admin" />
-                    <p class="submit" style="border-top: none;"><input type="submit" class="button-primary" name="subscribe" value="Subscribe" />
+                    <p class="submit" style="border-top: none;">
+                        <input type="submit" class="button-primary" name="subscribe" value="Subscribe" />
                         &nbsp;<input type="submit" class="button-primary" name="unsubscribe" value="Unsubscribe" /></p>
                 </div>
 
@@ -131,27 +194,22 @@ class BreakingNewsMail_Admin {
         // show the selected subscribers 
         $alternate = 'alternate';
         ?>
-                    <table class="widefat" cellpadding="2" cellspacing="2" width="100%">
-        <?php $searchterm = ( $_POST['searchterm'] ) ? $_POST['searchterm'] : '0'; ?>
+                    <table class="widefat" cellpadding="2" cellspacing="2" width="100%">        
                         <tr class="alternate">
                             <td colspan="3">
-                                <input type="text" name="searchterm" value="<?php $searchterm ?>" />
+                                <input type="text" name="searchterm" value="<?php  $search_term ?>" />
                             </td>
                             <td>
                                 <input type="submit" class="button-secondary" name="search" value="Search Subscribers" />
-                            </td>
-        <?php   $reminderform = ( $_POST['reminderform'] ) ? $_POST['reminderform'] : '0';
-        if ($reminderform) { ?>
-                                <td width="25%" align="right"><input type="hidden" name="reminderemails" value="<?php $reminderemails ?>" />
-                                    <input type="submit" class="button-secondary" name="remind" value="Send Reminder Email" /></td>
-        <?php } else { ?>
-                                <td width="25%"></td>
-            <?php
-        }
+                            </td>        
+                            <td width="25%"></td>
+            <?php        
         if (!empty($subscribers)) {
+            $exportcsv = Array();
             $exportcsv = implode(",rn", $subscribers);
             ?>
-                                <td width="25%" align="right"><input type="hidden" name="exportcsv" value="" />
+                                <td width="25%" align="right">
+                                   <!-- <input type="hidden" name="exportcsv" value="<?php echo $exportcsv; ?>" /> -->
                                     <input type="submit" class="button-secondary" name="csv" value="Save Emails to CSV File" /></td>
                             <?php } else { ?>
                                 <td width="25%"></td>
@@ -159,103 +217,118 @@ class BreakingNewsMail_Admin {
                         </tr>
 
         <?php if (!empty($subscribers)) { ?>
-                            <tr><td colspan="3" align="center">
-                                    <input type="submit" class="button-secondary" name="process" value="Process" />
+               <?php if (!empty($strip)) { ?>
+                            <tr>                                
+                                <td colspan="6" align="right">
+                                    <?php echo $strip; ?>
                                 </td>
-                                <td colspan="3" align="right"><?php $strip ?></td>
                             </tr>
-                            <?php
-                        }
-                        if (!empty($subscribers)) {
-                            if (is_int($this->bnm_options['entries'])) {
-                                $subscriber_chunks = array_chunk($subscribers, $this->bnm_options['entries']);
-                            } else {
-                                $subscriber_chunks = array_chunk($subscribers, 25);
-                            }
-                            $chunk = $page - 1;
-                            $subscribers = $subscriber_chunks[$chunk];
-                            ?>
+               <?php } ?>
+       <?php
+             if (is_int($this->bnm_options['entries'])) {
+                 $subscriber_chunks = array_chunk($subscribers, $this->bnm_options['entries']);
+             } else {
+                 $subscriber_chunks = array_chunk($subscribers, 25);
+             }
+             $chunk = $page - 1;
+             $subscribers = $subscriber_chunks[$chunk];   
+         ?>
+                            
+                            
                             <tr class="alternate" style="height:1.5em;">
-                                <td width="4%" align="center">
-                                    <img src="<?php $urlpath ?> images/accept.png" alt="&lt;" title="Confirm this email address" /></td>
-                                <td width="4%" align="center">
-                                    <img src="<?php $urlpath ?> images/exclamation.png" alt="&gt;" title="Unconfirm this email address" /></td>
-                                <td width="4%" align="center">
-                                    <img src="<?php $urlpath ?> images/cross.png" alt="X" title="Delete this email address" /></td><td colspan="3"></td></tr>
+                                <td width="8%" align="center">
+                                    Confirm email
+                                </td>
+                                <td width="8%" align="center">
+                                    Unconfirm email
+                                </td>
+                                <td width="8%" align="center">
+                                    Delete email
+                                </td>
+                                <td align="center"> 
+                                    Email                                    
+                                </td>
+                                <td align="center"> 
+                                    Sign up date
+                                </td>
+                                <td align="center">            
+                                    IP
+                                </td>
+                                
+                            </tr>
                             <tr class="">
-                                <td align="center"><input type="checkbox" name="checkall" value="confirm_checkall" /></td>
-                                <td align="center"><input type="checkbox" name="checkall" value="unconfirm_checkall" /></td>
-                                <td align="center"><input type="checkbox" name="checkall" value="delete_checkall" /></td>
+                                <td align="center"><input type="checkbox" name="checkall" value="confirm_checkall" />Confirm all</td>
+                                <td align="center"><input type="checkbox" name="checkall" value="unconfirm_checkall" />Unconfirm all</td>
+                                <td align="center"><input type="checkbox" name="checkall" value="delete_checkall" />Delete all</td>
                                 <td colspan ="3" align="left"><strong>Select / Unselect All</strong></td>
                             </tr>
-
+                            
             <?php foreach ($subscribers as $subscriber) { ?>
-                                <tr class="<?php $alternate ?>" style="height:1.5em;">";
-                                    <td align="center">
-                <?php if (in_array($subscriber, $confirmed)) { ?>
-                                        </td><td align="center">
-                                            <input class="unconfirm_checkall" title="Unconfirm this email address" type="checkbox" name="unconfirm[]" value="<?php $subscriber ?>" /></td>
-                                        <td align="center">
-                                            <input class="delete_checkall" title="Delete this email address" type="checkbox" name="delete[]" value="<?php $subscriber ?>" />
-                                        </td>
-                                        <td colspan="3">
-                                            <span style="color:#006600">&#x221A;&nbsp;&nbsp;</span>
-                                            <abbr title="<?php $this->signup_ip($subscriber) ?>">
-                                                <a href="mailto:<?php $subscriber ?>"><?php $subscriber ?></a></abbr>
-                                            (<span style="color:#006600"><?php $this->signup_date($subscriber) ?></span>)
-
+                            <tr class="<?php echo $alternate; ?>" style="height:1.5em;">
+                                <td align="left">&nbsp;&nbsp;
+            <?php if (in_array($subscriber, $confirmed)) { ?>
+                                </td>
+                                <td align="left">&nbsp;&nbsp;
+                                    <input class="unconfirm_checkall" title="Unconfirm this email address" type="checkbox" name="unconfirm[]" value="<?php echo $subscriber; ?>" />
+                                </td>
+                                <td align="left">&nbsp;&nbsp;
+                                    <input class="delete_checkall" title="Delete this email address" type="checkbox" name="delete[]" value="<?php echo $subscriber; ?>" />
+                                </td>
+                                <td align="center">
+                                    <span style="color:#006600">&#x221A;&nbsp;&nbsp;</span>
+                                    <a href="mailto:<?php echo $subscriber; ?>"><?php echo $subscriber; ?></a>
+                                </td>
+                                
+                                <td align="center">                                   
+                                   <span style="color:#006600"><?php echo $this->objController->get_signup_date($subscriber) ?></span>
+                                </td>
+                                <td align="center">
+                                    <abbr title="<?php echo $this->objController->get_signup_ip($subscriber) ?>"> </abbr>    
+                                    
                 <?php } elseif (in_array($subscriber, $unconfirmed)) { ?>
-                                            <input class="confirm_checkall" title="Confirm this email address" type="checkbox" name="confirm[]" value="<?php $subscriber ?>" />
-                                        </td>
-                                        <td align="center"></td>
-                                        <td align="center">
-                                            <input class="delete_checkall" title="Delete this email address" type="checkbox" name="delete[]" value="<?php $subscriber ?>" />
-                                        </td>
-                                        <td colspan="3">
-                                            <span style="color:#FF0000">&nbsp;!&nbsp;&nbsp;&nbsp;</span>
-                                            <abbr title="<?php $this->signup_ip($subscriber) ?>"><a href="mailto:<?php $subscriber ?>">
-                    <?php $subscriber ?></a>
-                                            </abbr>
-                                            (<span style="color:#FF0000"><?php $this->signup_date($subscriber) ?></span>)
-
-                    <?php
-                } elseif (in_array($subscriber, $all_users)) {
-                    $user_info = get_user_by('email', $subscriber);
-                    ?>
-                                        </td><td align="center"></td>
-                                        <td align="center"></td>
-                                        <td colspan="3">
-                                            <span style="color:#006600">&reg;&nbsp;&nbsp;</span>
-                                            <abbr title="<?php $user_info->user_login ?>"><a href="mailto:<?php $subscriber ?>">
-                                            <?php $subscriber ?></a>
-                                            </abbr>
-                                            (<a href="<?php get_option('siteurl') ?>/wp-admin/admin.php?page=bnm&amp;email=<?php urlencode($subscriber) ?>">edit</a>)
-                <?php } ?>
-                                    </td>
+                                   <input class="confirm_checkall" title="Confirm this email address" type="checkbox" name="confirm[]" value="<?php echo $subscriber; ?>" />
+                                </td>
+                                <td align="left"></td>
+                                <td align="left">&nbsp;&nbsp;
+                                  <input class="delete_checkall" title="Delete this email address" type="checkbox" name="delete[]" value="<?php echo $subscriber; ?>" />
+                                </td>
+                                <td align="center">
+                                    <span style="color:#FF0000">&nbsp;! (unconfirmed)&nbsp;</span>
+                                    <a href="mailto:<?php echo $subscriber; ?>"><?php echo $subscriber; ?></a>
+                                </td>
+                                <td align="center">                                   
+                                    <span style="color:#FF0000"><?php echo $this->objController->get_signup_date($subscriber) ?></span>
+                                </td>
+                                <td align="center">                                   
+                                    <abbr title="<?php echo $this->objController->get_signup_ip($subscriber) ?>"></abbr>
+                                   
+                    <?php } ?>
+                                </td>
                                 </tr>
-                                                <?php
-                                                ('alternate' == $alternate) ? $alternate = '' : $alternate = 'alternate';
-                                            }
-                                        } else {
-                                            if ($_POST['searchterm']) {
-                                                ?>
-                                <tr><td colspan="6" align="center"><b>No matching subscribers found</b></td></tr>
-                            <?php } else { ?>
-                                <tr><td colspan="6" align="center"><b>There are not subscribers yet</b></td></tr>
-                                <?php
-                            }
-                        }
-                        if (!empty($subscribers)) {
-                            ?>
-                            <tr class="<?php $alternate ?>"><td colspan="3" align="center"><input type="submit" class="button-secondary" name="process" value="Process" /></td>
-                                <td colspan="3" align="right"><?php $strip ?></td></tr>
-                        <?php } ?>
-                    </table>
-                </div>
-            </form>
-        </div>
-        <?php
-        $this->objController->process_subscribers_admin_form($_POST);
+                    <?php ($alternate == 'alternate') ? $alternate = '' : $alternate = 'alternate';
+                                            } //end foreach
+         }
+         if (empty($subscribers)){
+             if ($search_term) { ?>
+                      <tr><td colspan="6" align="center"><b>No matching subscribers found</b></td></tr>
+              <?php } else { ?>
+              <tr><td colspan="6" align="center"><b>There are not subscribers yet</b></td></tr>
+             <?php }
+          }
+          if (!empty($subscribers)) { ?>
+                      <tr class="<?php echo $alternate; ?>">
+                          <td colspan="3" align="center">
+                              <input type="submit" class="button-secondary" name="process" value="Process" />
+                          </td>
+                          <td colspan="3" align="right"><?php echo $strip; ?></td>
+                      </tr>
+          <?php } ?>
+               </table>
+            </div>
+         </form>
+       </div>
+  <?php
+        
     }
 
     /**
@@ -263,7 +336,7 @@ class BreakingNewsMail_Admin {
       Optionally pre-select those categories specified
      */
     function display_category_form($selected = array(), $override = 1) {
-        global $wpdb;
+      //  global $wpdb;
 
         if ($override == 0) {
             $all_cats = $this->objController->all_cats(true);
