@@ -142,7 +142,7 @@ class WP_Breaking_News_Mail_Main {
         } // option for excluded categories
 
         if (empty($this->bnm_options['sender_email'])) {
-            $this->bnm_options['sender_email'] = "author";
+            $this->bnm_options['sender_email'] = "author@email.com";
         } // option for email notification sender
 
         if (empty($this->bnm_options['show_meta'])) {
@@ -179,7 +179,7 @@ class WP_Breaking_News_Mail_Main {
         } // option for excluding post formats as supported by the current theme
 
         if (empty($this->bnm_options['mailtext'])) {
-            $this->bnm_options['mailtext'] = __("{BLOGNAME} has posted a new item, '{TITLE}'\n\n{POST}\n\nYou may view the latest post at\n{PERMALINK}\n\nYou received this e-mail because you asked to be notified when new updates are posted.\nBest regards,\n", "bnm");
+            $this->bnm_options['mailtext'] = __("{BLOGNAME} has posted a new item, '{TITLE}'\n\n{POST}\n\nYou may view the latest post at\n{PERMALINK}\n\nYou received this e-mail because you asked to be notified when new updates are posted.\nBest regards,\n {BLOGNAME} Team", "bnm");
         } // Default notification email text
         
         if (empty($this->bnm_options['notification_subject'])) {
@@ -187,19 +187,19 @@ class WP_Breaking_News_Mail_Main {
         } // Default notification email subject
 
         if (empty($this->bnm_options['confirm_email'])) {
-            $this->bnm_options['confirm_email'] = __("{BLOGNAME} has received a request to {CONFIRMATION_ACTION} for this email address. To complete your request please click on the link below:\n\n{LINK}\n\nIf you did not request this, please feel free to disregard this notice!\n\nThank you,\n{MYNAME}.", "bnm");
+            $this->bnm_options['confirm_email'] = __("{BLOGNAME} has received a request to {CONFIRMATION_ACTION} for this email address. To complete your request please click on the link below:\n\n{LINK}\n\nIf you did not request this, please feel free to disregard this notice!\n\nThank you,\n{BLOGNAME} Team.", "bnm");
         } // Default confirmation email text
 
         if (empty($this->bnm_options['confirm_subject'])) {
             $this->bnm_options['confirm_subject'] = "[{BLOGNAME}] " . __('Please confirm your request', 'bnm');
         } // Default confirmation email subject
 
-        if (empty($this->bnm_options['remind_email'])) {
-            $this->bnm_options['remind_email'] = __("This email address was subscribed for notifications at {BLOGNAME} ({BLOGLINK}) but the subscription remains incomplete.\n\nIf you wish to complete your subscription please click on the link below:\n\n{LINK}\n\nIf you do not wish to complete your subscription please ignore this email and your address will be removed from our database.\n\nRegards,\n{MYNAME}", "bnm");
+        if (empty($this->bnm_options['unsubscribe_email'])) {
+            $this->bnm_options['unsubscribe_email'] = __("{BLOGNAME} has received a request to {UNSUBSCRIBE_ACTION} for this email address. To complete your request please click on the link below:\n\n{LINK}\n\nIf you did not request this, please feel free to disregard this notice!\n\nThank you,\n{BLOGNAME} Team.", "bnm");
         } // Default reminder email text
 
-        if (empty($this->bnm_options['remind_subject'])) {
-            $this->bnm_options['remind_subject'] = "[{BLOGNAME}] " . __('Subscription Reminder', 'bnm');
+        if (empty($this->bnm_options['unsubscribe_subject'])) {
+            $this->bnm_options['unsubscribe_subject'] = "[{BLOGNAME}] " . __('Please confirm your request', 'bnm');
             ;
         } // Default reminder email subject
     }
