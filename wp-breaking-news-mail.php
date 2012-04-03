@@ -69,8 +69,12 @@ class WP_Breaking_News_Mail_Main {
                 add_option("bnm_options", $this->bnm_options);
             }
 
-
-            $objBreakingNewsMail_Admin = new BreakingNewsMail_Admin();
+            if ( is_admin() ) { 
+                $objBreakingNewsMail_Admin = new BreakingNewsMail_Admin();
+            }  else {
+                $objBreakingNewsMail_Admin = new BreakingNewsMail_Controller();
+            }
+            
 
             add_action('widgets_init', function() {
                         return register_widget('BreakingNewsMail_Widget');
