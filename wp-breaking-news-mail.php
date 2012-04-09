@@ -72,14 +72,13 @@ class WP_Breaking_News_Mail_Main {
             if ( is_admin() ) { 
                 $objBreakingNewsMail_Admin = new BreakingNewsMail_Admin();
             }  else {
-                $objBreakingNewsMail_Admin = new BreakingNewsMail_Controller();
-            }
-            
-
-            add_action('widgets_init', function() {
+                $objBreakingNewsMail_Controller = new BreakingNewsMail_Controller();
+            }     
+        }
+        
+        add_action('widgets_init', function() {
                         return register_widget('BreakingNewsMail_Widget');
                     });
-        }
     }
 
     function bnm_main_install() {

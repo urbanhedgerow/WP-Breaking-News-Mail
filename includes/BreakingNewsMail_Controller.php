@@ -63,7 +63,7 @@ class BreakingNewsMail_Controller {
             }
         } else {
             if (isset($_GET['bnm'])) {
-                // someone is confirming a request
+                echo "someone is confirming a request";
                 if (defined('DOING_BNM_CONFIRM') && DOING_BNM_CONFIRM) {
                     return;
                 }

@@ -63,19 +63,7 @@ class BreakingNewsMail_Widget extends WP_Widget {
 
     //display the widget on the blog
     public function widget($args, $instance) {
-        
-        
-         extract($args);
-?>
-        <?php echo $before_widget; ?>
-            <?php echo $before_title
-                . 'My Unique Widget'
-                . $after_title; ?>
-            Hello, World!
-        <?php echo $after_widget; ?>
-<?php
-        
-      /*  extract($args, EXTR_SKIP);
+    extract($args, EXTR_SKIP);
         
         $title = empty($instance['title']) ? _('Breaking news email subscription') : $instance['title'];
         $text = empty($instance['text']) ? _('Subscribe yourself') : $instance['text'];
@@ -93,7 +81,7 @@ class BreakingNewsMail_Widget extends WP_Widget {
             <input type='submit' value='Subscribe' name='bnm_subscribe_submit' id='bnm_subscribe_submit' />
         </form>
         <?php
-        echo $after_widget;*/
+        echo $after_widget;
     }
 
 }
