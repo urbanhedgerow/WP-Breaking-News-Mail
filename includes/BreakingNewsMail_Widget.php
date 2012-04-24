@@ -1,10 +1,9 @@
 <?php
-
 /**
  * This class shows the widget for subscriptions
- * @author Daniela VAlero
+ * @author Daniela Valero aka DaHe
  * @copyright 2012
- * @license http://www.gnu.org/licenses/gpl.html GPL v3 
+ * @license http://www.gnu.org/licenses/gpl.html GPL v2 
  * @since 1.0
  * @package WP-Breaking-News-Mail
  */
@@ -20,6 +19,7 @@ class BreakingNewsMail_Widget extends WP_Widget {
     }
 
     // display a form for the widget in the admin view to customize the widget’s properties
+    
     public function form($instance) {
         if (isset($instance['text'])) {
             $text = $instance['text'];
@@ -32,15 +32,6 @@ class BreakingNewsMail_Widget extends WP_Widget {
         } else {
             $title = __('Subscribe', 'text_domain');
         }
-
-        if (isset($instance['postto'])) {
-            $postto = $instance['postto'];
-        }else{
-            $postto = "";
-        }
-        global $wpdb;
-        $sql = "SELECT ID, post_title FROM $wpdb->posts WHERE post_type='page' AND post_status='publish'";
-        $pages = $wpdb->get_results($sql);
         ?>
         <p>
             <label for="<?php echo $this->get_field_id('title'); ?>"><?php _e('Widget Title:'); ?></label> 
@@ -57,22 +48,7 @@ class BreakingNewsMail_Widget extends WP_Widget {
                    name="<?php echo $this->get_field_name('text'); ?>" type="text" 
                    value="<?php echo esc_attr($text); ?>" />
         </p>
-        <?php
-        if (!empty($pages)) {
-            echo "<p><label for=\"" . $this->get_field_name('postto') . "\">" . __('Post form content to page', 'bnm') . ":\r\n";
-            echo "<select id=\"" . $this->get_field_id('postto') . "\" name=\"" . $this->get_field_name('postto') . "\">\r\n";
-            echo "<option value=\"\">" . __('Use Default', 'bnm') . "</option>\r\n";
-            $option = '';
-            foreach ($pages as $page) {
-                $option .= "<option value=\"" . $page->ID. "\"";                
-                if ($page->ID == $postto) {
-                    $option .= " selected=\"selected\"";
-                }
-                $option .= ">" . $page->post_title . "</option>\r\n";
-            }
-            echo $option;
-            echo "</select></label></p>\r\n";
-        }
+        <?php       
     }
 
     //update the widget’s properties specified in the form in the admin view
@@ -81,8 +57,7 @@ class BreakingNewsMail_Widget extends WP_Widget {
         $instance = $old_instance;
         $instance['title'] = strip_tags($new_instance['title']);
         $instance['text'] = strip_tags($new_instance['text']);
-        $instance['bnm_email'] = strip_tags($new_instance['bnm_email']);
-        $instance['postto'] = stripslashes($new_instance['postto']);
+        $instance['bnm_email'] = strip_tags($new_instance['bnm_email']);        
         return $instance;
     }
 
@@ -90,13 +65,12 @@ class BreakingNewsMail_Widget extends WP_Widget {
     public function widget($args, $instance) {
         extract($args, EXTR_SKIP);
         $title = empty($instance['title']) ? _('Breaking news email subscription') : $instance['title'];
-        $text = empty($instance['text']) ? _('Subscribe yourself') : $instance['text'];
-        $postto = empty($instance['postto']) ? esc_url($_SERVER['REQUEST_URI']) : get_permalink($instance['postto']);
+        $text = empty($instance['text']) ? _('Subscribe yourself') : $instance['text'];        
         echo $before_widget;
         echo $before_title . $title . $after_title;
         ?> 
         <div id='result'></div>
-        <form name='bnm_subscribe_form' id='bnm_subscribe_form' method='post' action='<?php echo $postto; ?>'>
+        <form name='bnm_subscribe_form' id='bnm_subscribe_form' method='post' action=''>
             <?php wp_nonce_field('bnm_nonce'); ?>
             <h3> <?php $text ?></h3>
             <input type="email" name='bnm_email' class="required email"  id='bnm_email' value='' required/>

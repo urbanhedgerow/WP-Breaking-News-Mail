@@ -1,11 +1,9 @@
 <?php
 /**
- * The admin class, handles the activities of the admin
- * dashboard involing the plugin.
- * 
- * @author Daniela VAlero
+ * Description of BreakingNewsMail_Controller
+ * @author Daniela Valero aka DaHe
  * @copyright 2012
- * @license http://www.gnu.org/licenses/gpl.html GPL v3 
+ * @license http://www.gnu.org/licenses/gpl.html GPL v2
  * @since 1.0
  * @package WP-Breaking-News-Mail
  */
@@ -19,32 +17,40 @@ class BreakingNewsMail_Admin {
     function __construct() {
         add_action('admin_menu', array(&$this, 'bnm_add_page'));
         $this->bnm_options = get_option('bnm_options');
-        $this->objController = new BreakingNewsMail_Controller();      
+        $this->objController = new BreakingNewsMail_Controller();
     }
 
-    function bnm_add_page() {
-        //wp_enqueue_script( 'boj_insertjs_1', BOJ_INSERTJS.'/admin.js');
+    
+     /*
+     * Add the administration menues
+     * @since 1
+     *     
+     */
+    function bnm_add_page() {        
         $settings = add_menu_page('Breaking news mail', 'Breaking Settings', 'manage_options', 'bnm-menu', array($this, 'bnm_settings_page'));
         add_action("admin_print_scripts-$settings", array(&$this->objController, 'checkbox_form_js'));
         $subscrbers = add_submenu_page('bnm-menu', 'Subscribers', 'Subscribers', 'manage_options', 'bnm_settings', array(&$this, 'bnm_subscribers_page'));
         add_action("admin_print_scripts-$subscrbers", array(&$this->objController, 'checkbox_form_js'));
-        
-        
-        
+
+
+
     }
+
     
-    // Draw the option page
+     /*
+     * Draw the option page
+     * @since 1
+     *     
+     */
     function bnm_settings_page() {
-         $this->bnm_options = $this->objController->save_settings($_POST);   
-         // $l = get_permalink($this->bnm_options['bnmpage']);
-        //  echo $l;
+         $this->bnm_options = $this->objController->save_settings($_POST);         
         ?>
         <div class="wrap">
             <div id="icon-tools" class="icon32"></div>
             <h2>Breaking News Mail Settings Page</h2>
             <form action="<?php echo esc_url($_SERVER['REQUEST_URI']); ?>" method="post">
         <?php settings_fields('bnm_settings_options'); ?>
-                <h3>General settings</h3>                
+                <h3>General settings</h3>
         <?php do_settings_sections('bnm_settings'); ?>
                 <br /><br />
                 <?php $this->display_category_form(explode(',', $this->bnm_options['exclude'])); ?>
@@ -59,8 +65,8 @@ class BreakingNewsMail_Admin {
                 <input type="text" name="sender_email" value="<?php echo stripslashes($this->bnm_options['sender_email']) ?>" size="50" />
                 <br /><br />
                 Restrict the number of recipients per email to (0 for unlimited)
-                 <span id="bnmbcc_1">                     
-                     <input type="text" name="bbclimit" value="<?php echo $this->bnm_options['bcclimit'] ?>" />                     
+                 <span id="bnmbcc_1">
+                     <input type="text" name="bbclimit" value="<?php echo $this->bnm_options['bcclimit'] ?>" />
                  </span>
                  <br /><br />
                  Email excerpt format:
@@ -68,26 +74,26 @@ class BreakingNewsMail_Admin {
                     <input type="radio" name="email_format" value="html"<?php checked($this->bnm_options['email_format'], 'html', true) ?> />
                     HTML
                 </label>&nbsp;&nbsp;
-                    
+
                 <label>
                    <input type="radio" name="email_format" value="text" <?php checked($this->bnm_options['email_format'], 'text', true) ?> />
                    Plain Text
                 </label><br /><br />
-                
+
                 <label>
-                    Set default page to be shown to users as confirmation message: 
+                    Set default page to be shown to users as confirmation message:
                     <select name="page">
                     <?php echo $this->objController->pages_dropdown($this->bnm_options['bnmpage']); ?>
                     </select>
-                </label><br /><br />                
+                </label><br /><br />
 
                 <div class="" id="bnm_template">
                     <h3>Email templates</h3>
                     <br />
                     <table width="100%" cellspacing="2" cellpadding="1" class="editform">
                         <tr><td>
-                                New Post email (must not be empty):<br /> 
-                                Subject line: 
+                                New Post email (must not be empty):<br />
+                                Subject line:
                                 <input type="text" name="notification_subject" value="<?php echo stripslashes($this->bnm_options['notification_subject']); ?>" size="30" />
                                 <br />
                                 <textarea rows="9" cols="60" name="mailtext" value="<?php echo stripslashes($this->bnm_options['mailtext']) ?>"><?php echo stripslashes($this->bnm_options['mailtext']) ?></textarea><br /><br />
@@ -99,33 +105,38 @@ class BreakingNewsMail_Admin {
                                     <dt><b>{BLOGNAME}</b></dt><dd><?php get_option('blogname') ?></dd>
                                     <dt><b>{BLOGLINK}</b></dt><dd><?php get_option('home') ?></dd>
                                     <dt><b>{TITLE}</b></dt><dd> the post's title<br />(<i>for per-post emails only</i>) </dd>
-                                    <dt><b>{POST}</b></dt><dd> the excerpt of the entire post </dd>		 		 		 
-                                    <dt><b>{PERMALINK}</b></dt><dd> the post's permalink<br />(<i>for per-post emails only</i>) </dd>		 
+                                    <dt><b>{POST}</b></dt><dd> the excerpt of the entire post </dd>
+                                    <dt><b>{PERMALINK}</b></dt><dd> the post's permalink<br />(<i>for per-post emails only</i>) </dd>
                                     <dt><b>{DATE}</b></dt><dd> the date the post was made<br />(<i>for per-post emails only</i>) </dd>
                                     <dt><b>{TIME}</b></dt><dd> the time the post was made<br />(<i>for per-post emails only</i>) </dd>
-                                    <dt><b>{LINK}</b></dt><dd> the generated link to confirm a request<br />(<i>only used in the confirmation email template</i>) </dd> 
-                                    <dt><b>{CONFIRMATION_ACTION}</b></dt><dd> Action performed by LINK in confirmation email<br />(<i>only used in the confirmation email template</i>) </dd> 
-                                    <dt><b>{UNSUBSCRIBE_ACTION}</b></dt><dd> This generate a link for unsubscriptions, it is used on email notifications</dd>                                    
+                                    <dt><b>{LINK}</b></dt><dd> the generated link to confirm a request<br />(<i>only used in the confirmation email template</i>) </dd>
+                                    <dt><b>{CONFIRMATION_ACTION}</b></dt><dd> Action performed by LINK in confirmation email<br />(<i>only used in the confirmation email template</i>) </dd>
+                                    <dt><b>{UNSUBSCRIBE_ACTION}</b></dt><dd> This generate a link for unsubscriptions, it is used on email notifications</dd>
                                 </dl></td></tr><tr><td>
-                                Subscribe Subscribe confirmation email:<br /> 
-                                Subject Line:  
-                                <input type="text" name="confirm_subject" value="<?php echo stripslashes($this->bnm_options['confirm_subject']) ?>" size="30" /><br /> 
-                                <textarea rows="9" cols="60" name="confirm_email"><?php echo stripslashes($this->bnm_options['confirm_email']) ?></textarea><br /><br /> 
+                                Subscribe Subscribe confirmation email:<br />
+                                Subject Line:
+                                <input type="text" name="confirm_subject" value="<?php echo stripslashes($this->bnm_options['confirm_subject']) ?>" size="30" /><br />
+                                <textarea rows="9" cols="60" name="confirm_email"><?php echo stripslashes($this->bnm_options['confirm_email']) ?></textarea><br /><br />
                             </td></tr>
-                        <tr valign="top"><td> 
-                                Unsubscribe confirmation confirmation email:<br /> 
-                                Subject Line:  
-                                <input type="text" name="remind_subject" value="<?php echo stripslashes($this->bnm_options['unsubscribe_subject']) ?>" size="30" /><br /> 
-                                <textarea rows="9" cols="60" name="remind_email"><?php echo stripslashes($this->bnm_options['unsubscribe_email']) ?></textarea><br /><br /> 
-                            </td></tr></table><br /> 
-                </div> 
+                        <tr valign="top"><td>
+                                Unsubscribe confirmation confirmation email:<br />
+                                Subject Line:
+                                <input type="text" name="remind_subject" value="<?php echo stripslashes($this->bnm_options['unsubscribe_subject']) ?>" size="30" /><br />
+                                <textarea rows="9" cols="60" name="remind_email"><?php echo stripslashes($this->bnm_options['unsubscribe_email']) ?></textarea><br /><br />
+                            </td></tr></table><br />
+                </div>
                 <input name="Submit" type="submit" value="Save Changes" />
             </form></div>
         <?php
-       
+
     }
 
-    // Draw the option page
+    
+    /*
+     * Draw the option page
+     * @since 1
+     *   
+     */
     function bnm_subscribers_page() {
       global $bnmnonce;
         if (isset($_GET['bnmpage'])) {
@@ -134,21 +145,20 @@ class BreakingNewsMail_Admin {
             $page = 1;
         }
         $search_term = isset($_POST['searchterm']) ? $_POST["searchterm"] : "";
-        
-        $getted_subscribers = $this->objController->process_subscribers_admin_form($_POST);        
-        
+
+        $getted_subscribers = $this->objController->process_subscribers_admin_form($_POST);
+
         $this->bnm_options = $this->objController->get_bnm_options();
-        
+
         $subscribers = Array();
         foreach ($getted_subscribers as $key => $value) {
             $what = $key;
             $subscribers = $value;
         }
-        
-        
+
         $confirmed = $this->objController->get_all_emails();
         $unconfirmed = $this->objController->get_all_emails(0);
-        
+
         /* Pagination */
         if (!empty($subscribers)) {
             natcasesort($subscribers);
@@ -182,7 +192,7 @@ class BreakingNewsMail_Admin {
                 $strip .= "<a class=\"next\" href=\"" . esc_url(add_query_arg($args)) . "\">" . 'Next Page' . " &raquo;</a>\n";
             }
         }
-      
+
         ?>
         <div class="wrap">
             <div id="icon-tools" class="icon32"></div>
@@ -210,19 +220,19 @@ class BreakingNewsMail_Admin {
                     <h2>Current Subscribers</h2>
                     <br /><br />
         <?php
-        // show the selected subscribers 
+        // show the selected subscribers
         $alternate = 'alternate';
         ?>
-                    <table class="widefat" cellpadding="2" cellspacing="2" width="100%">        
+                    <table class="widefat" cellpadding="2" cellspacing="2" width="100%">
                         <tr class="alternate">
                             <td >
                                 <input type="text" name="searchterm" value="<?php  $search_term ?>" />
                             </td>
                             <td>
                                 <input type="submit" class="button-secondary" name="search" value="Search Subscribers" />
-                            </td>        
+                            </td>
                             <td width="25%"></td>
-            <?php        
+            <?php
         if (!empty($subscribers)) {
             $exportcsv = Array();
             $exportcsv = implode(",rn", $subscribers);
@@ -237,7 +247,7 @@ class BreakingNewsMail_Admin {
 
         <?php if (!empty($subscribers)) { ?>
                <?php if (!empty($strip)) { ?>
-                            <tr>                                
+                            <tr>
                                 <td colspan="4" align="right">
                                     <?php echo $strip; ?>
                                 </td>
@@ -250,59 +260,57 @@ class BreakingNewsMail_Admin {
                  $subscriber_chunks = array_chunk($subscribers, 25);
              }
              $chunk = $page - 1;
-             $subscribers = $subscriber_chunks[$chunk];   
+             $subscribers = $subscriber_chunks[$chunk];
          ?>
-                            
-                            
-                            <tr class="alternate" style="height:1.5em;">                                
+                            <tr class="alternate" style="height:1.5em;">
                                 <td width="8%" align="left">
                                    <strong> Delete email </strong>
                                 </td>
-                                <td align="center"> 
-                                   <strong>  Email </strong>                                   
+                                <td align="center">
+                                   <strong>  Email </strong>
                                 </td>
-                                <td align="center"> 
+                                <td align="center">
                                    <strong> Sign up date </strong>
                                 </td>
-                                <td align="center">            
+                                <td align="center">
                                    <strong> IP </strong>
                                 </td>
-                                
+
                             </tr>
-                            <tr class="">                                
+                            <tr class="">
                                 <td colspan ="4" align="left"><input type="checkbox" name="checkall" value="delete_checkall" />Delete all (<strong>Select / Unselect All</strong>)</td>
                             </tr>
-                            
+
             <?php foreach ($subscribers as $subscriber) { ?>
                             <tr class="<?php echo $alternate; ?>" style="height:1.5em;">
                                 <td align="left">
-            <?php if (in_array($subscriber, $confirmed)) { ?>                                
+            <?php if (in_array($subscriber, $confirmed)) { ?>
                                     <input class="delete_checkall" title="Delete this email address" type="checkbox" name="delete[]" value="<?php echo $subscriber; ?>" />
-                                </td>                                
+                                </td>
                                 <td align="center">
                                     <span style="color:#006600">&#x221A;&nbsp;&nbsp;</span>
                                     <a href="mailto:<?php echo $subscriber; ?>"><?php echo $subscriber; ?></a>
                                 </td>
-                                
-                                <td align="center">                                   
+
+                                <td align="center">
                                    <span style="color:#006600"><?php echo $this->objController->get_signup_date($subscriber) ?></span>
                                 </td>
                                 <td align="center">
-                                    <abbr title="<?php echo $this->objController->get_signup_ip($subscriber) ?>"> </abbr>    
-                                    
+                                    <abbr title="<?php echo $this->objController->get_signup_ip($subscriber) ?>"> </abbr>
+
                 <?php } elseif (in_array($subscriber, $unconfirmed)) { ?>
                                     <input class="delete_checkall" title="Delete this email address" type="checkbox" name="delete[]" value="<?php echo $subscriber; ?>" />
-                                </td>                                
+                                </td>
                                 <td align="center">
                                     <span style="color:#FF0000">&nbsp;! (unconfirmed)&nbsp;</span>
                                     <a href="mailto:<?php echo $subscriber; ?>"><?php echo $subscriber; ?></a>
                                 </td>
-                                <td align="center">                                   
+                                <td align="center">
                                     <span style="color:#FF0000"><?php echo $this->objController->get_signup_date($subscriber) ?></span>
                                 </td>
-                                <td align="center">                                   
+                                <td align="center">
                                     <abbr title="<?php echo $this->objController->get_signup_ip($subscriber) ?>"></abbr>
-                                   
+
                     <?php } ?>
                                 </td>
                                 </tr>
@@ -329,15 +337,16 @@ class BreakingNewsMail_Admin {
          </form>
        </div>
   <?php
-        
+
     }
 
-    /**
-      Display a table of categories with checkboxes
-      Optionally pre-select those categories specified
+    /*
+     * Display a table of categories with checkboxes
+     * Optionally pre-select those categories specified
+     * @since 1
+     *    
      */
-    function display_category_form($selected = array(), $override = 1) {
-      //  global $wpdb;            
+    function display_category_form($selected = array(), $override = 1) {    
         if ($override == 0) {
             $all_cats = $this->objController->all_cats(true);
         } else {
@@ -367,7 +376,7 @@ class BreakingNewsMail_Admin {
                     $catName .= $parent->name . ' &raquo; ';
                 }
             }
-            $catName .= $cat->name;           
+            $catName .= $cat->name;
             if (0 == $j) {
                 echo"<label><input class=\"checkall_cat\" type=\"checkbox\" name=\"category[]\" value=\"" . $cat->term_id . "\"";
                 if (in_array($cat->term_id, $selected)) {

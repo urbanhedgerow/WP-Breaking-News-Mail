@@ -1,18 +1,17 @@
 <?php
-
 /*
   Plugin Name: WP Breaking News Mail
   Plugin URI: https://github.com/DanielaValero/WP-Breaking-News-Mail
-  Description: Notifies an email list when a Breaking News occur. Based on Subscribe2 from Matthew Robinson
+  Description: Notifies an email list when a Breaking News occur. Based on Subscribe2: http://subscribe2.wordpress.com/ from Matthew Robinson
   Version: 1
-  Author: Daniela Valero
+  Author: Daniela Valero aka DaHe
   Author URI: http://twitter.com/danielavalero_
  * License: GPLv2
  */
 ?>
 <?php
 
-/* Copyright YEAR   PLUGIN_AUTHOR_NAME  (email : PLUGIN AUTHOR EMAIL)
+/* Copyright YEAR   PLUGIN_DaHe  (email : danielavaleroa@gmail.com)
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation; either version 2 of the License, or
@@ -36,27 +35,26 @@ if (version_compare($GLOBALS['wp_version'], '3.1', '<')) {
 
 global $wpdb;
 
-define('BNM_PATH', trailingslashit(dirname(__FILE__)));
-//define('BNM_DIR', trailingslashit(dirname(plugin_basename(__FILE__))));
-//define('BNM_URL', plugin_dir_url(dirname(__FILE__)) . BNM_DIR);
 define('BNM_USERS', $wpdb->get_blog_prefix() . 'bnm_users');
 
 require_once 'includes/BreakingNewsMail_Widget.php';
 require_once 'includes/BreakingNewsMail_Admin.php';
 require_once 'includes/BreakingNewsMail_Controller.php';
 
- $bnm = new WP_Breaking_News_Mail_Main;
+$bnm = new WP_Breaking_News_Mail_Main;
 
 class WP_Breaking_News_Mail_Main {
 
     private $bnm_options = array();
-   private $objBreakingNewsMail_Controller;
+    private $objBreakingNewsMail_Controller;
 
     public function __construct() {
         // Call Wpsqt_Installer Class to write in WPSQT tables on activation 
         register_activation_hook(__FILE__, array(&$this, 'bnm_main_install'));
+        
         //ver donde llamo esto que no me de error
         //register_uninstall_hook(__FILE__, array(&$this,'bnm_unistall'));
+        
         $this->objBreakingNewsMail_Controller = $objBreakingNewsMail_Controller = new BreakingNewsMail_Controller();
         if (is_admin()) {
             if (is_multisite()) {
@@ -72,24 +70,33 @@ class WP_Breaking_News_Mail_Main {
                 add_option("bnm_options", $this->bnm_options);
             }
             $objBreakingNewsMail_Admin = new BreakingNewsMail_Admin();
-            
-           add_action('wp_ajax_bnm_process_subscription',array(&$this, 'bnm_process_subscription'));
-        }else{
-            add_action('wp_ajax_nopriv_bnm_process_subscription',array(&$this, 'bnm_process_subscription'));
-          
+
+            add_action('wp_ajax_bnm_process_subscription', array(&$this, 'bnm_process_subscription'));
+        } else {
+            add_action('wp_ajax_nopriv_bnm_process_subscription', array(&$this, 'bnm_process_subscription'));
         }
         add_action('widgets_init', function() {
                     return register_widget('BreakingNewsMail_Widget');
                 });
     }
 
-    
-    function bnm_process_subscription(){ 
-       if (!check_ajax_referer('bnm_nonce'))
-           exit();       
-        $this->objBreakingNewsMail_Controller->proccess_public_subscribers($_POST);            
+     /*
+     * This function is called by ajax on publich subscriptions
+     * @since 1
+     *     
+     */
+    function bnm_process_subscription() {
+        if (!check_ajax_referer('bnm_nonce'))
+            exit();
+        $this->objBreakingNewsMail_Controller->proccess_public_subscribers($_POST);
         die();
-    }   
+    }
+
+    /*
+     * Creates the database table
+     * @since 1
+     *   
+     */
     function bnm_main_install() {
         global $wpdb;
         $wpdb->query("CREATE TABLE IF NOT EXISTS `" . BNM_USERS . "` (
@@ -102,6 +109,11 @@ class WP_Breaking_News_Mail_Main {
 			PRIMARY KEY (id) )  ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;");
     }
 
+     /*
+     * Drop the database table and delete the option
+     * @since 1
+     *     
+     */
     function bnm_unistall() {
         global $wpdb;
         //delete any options, tables, etc the plugin created
@@ -114,6 +126,11 @@ class WP_Breaking_News_Mail_Main {
         $wpdb->query("DROP TABLE " . implode(",", $tables));
     }
 
+    /*
+     * Set the default options values
+     * @since 1
+     *    
+     */
     function setDefaultOptions() {
         if (empty($this->bnm_options['wpregdef'])) {
             $this->bnm_options['wpregdef'] = "no";
@@ -181,13 +198,14 @@ class WP_Breaking_News_Mail_Main {
         } // Default reminder email subject
     }
 
+    /*
+     * Update the options field on the database
+     * @since 1
+     *     
+     */
     function setOptions($bnm_options) {
         update_option('bnm_options', $bnm_options);
     }
 
 }
-
-/*
- * Al widget le quiero agregar un jquery validate para validar el formulario
- */
 ?>

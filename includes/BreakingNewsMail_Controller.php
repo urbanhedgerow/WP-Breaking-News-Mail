@@ -2,8 +2,11 @@
 
 /**
  * Description of BreakingNewsMail_Controller
- *
- * @author daniela
+ * @author Daniela Valero aka DaHe
+ * @copyright 2012
+ * @license http://www.gnu.org/licenses/gpl.html GPL v2 
+ * @since 1.0
+ * @package WP-Breaking-News-Mail
  */
 class BreakingNewsMail_Controller {
 
@@ -20,7 +23,7 @@ class BreakingNewsMail_Controller {
     private $filtered = 0;
     private $preview_email = false;
     // state variables used to affect processing
-    private $action = '';
+
     private $email = '';
     private $message = '';
     private $excerpt_length = 55;
@@ -42,16 +45,21 @@ class BreakingNewsMail_Controller {
     private $options_saved = '';
     private $options_reset = '';
     private $search_result = Array();
-    private $dialog_title;
-    private $dialog_message;
 
     function __construct() {
         $this->bnm_options = get_option('bnm_options');
-
         $this->messages_to_show();
-        add_action('publish_post', array(&$this, 'send_breaking_new_email_alert'));
+
         add_shortcode('BNM_CONFIRMATION_MESSAGE', array(&$this, 'show_bnm_confirmation_message'));
+
         if (is_admin()) {
+            if (defined('SENDING_BNM_ALERT') && SENDING_BNM_ALERT) {
+                return;
+            } else {
+                define('SENDING_BNM_ALERT', true);
+                add_action('publish_post', array(&$this, 'send_breaking_new_email_alert'));
+            }
+
             if (isset($_POST['bnm_admin']) && isset($_POST['csv']) && $_POST['csv']) {
                 $date = date('Y-m-d');
                 header("Content-Description: File Transfer");
@@ -98,7 +106,7 @@ class BreakingNewsMail_Controller {
      *
      * @param    email    $email    user's email
      * @param    ip    $ip    ip from user's compurter
-     * @return   boolean  true if success 
+     * @return   string  $message Its a feedback message
      */
     function add_subscriptor($email, $ip) {
         global $wpdb;
@@ -117,9 +125,6 @@ class BreakingNewsMail_Controller {
         } else {
             $result = $wpdb->get_results($wpdb->prepare("INSERT INTO " . BNM_USERS . " (email, active, date, ip) VALUES (%s, %d, NOW(), %s)", $email, 0, $ip));
         }
-
-        //  return $result;
-
         if ($result !== false) {
             if (!$this->is_email_active($email)) {
                 $this->email = $email;
@@ -134,9 +139,12 @@ class BreakingNewsMail_Controller {
     }
 
     /**
-      Overrides the default query when handling a (un)subscription confirmation
-      This is basically a trick: if the s2 variable is in the query string, just grab the first
-      static page and override it's contents later with title_filter()
+     * Overrides the default query when handling a (un)subscription confirmation
+     * This is basically a trick: if the s2 variable is in the query string, just grab the first
+     * static page and override it's contents later with title_filter()
+     * 
+     * @since 1
+     *
      */
     function query_filter() {
         // don't interfere if we've already done our thing
@@ -157,7 +165,10 @@ class BreakingNewsMail_Controller {
     }
 
     /**
-      Overrides the page title
+     *  Overrides the page title
+     * 
+     * @since 1
+     *     
      */
     function title_filter($title) {
         // don't interfere if we've already done our thing
@@ -172,8 +183,8 @@ class BreakingNewsMail_Controller {
      * Confirm request from the link emailed to the user and email the admin
      * @since 1
      *
-     * @param    confirmed    $confirmed    users email
-     * @return   boolean
+     * @param    content   $content   
+     * @return   string  $message Its a feedback message
      */
 
     function confirm_subscriptor($content = '') {
@@ -182,9 +193,6 @@ class BreakingNewsMail_Controller {
         $action = intval(substr($code, 0, 1));
         $hash = substr($code, 1, 32);
         $id = intval(substr($code, 33));
-
-
-
         if ($id) {
             $this->email = is_email($this->get_email($id));
             if (!$this->email || $hash !== md5($this->email)) {
@@ -195,23 +203,21 @@ class BreakingNewsMail_Controller {
             $this->message = $this->no_such_email;
             return;
         }
-
         if ($action == 1) { // make this subscription active   
             $this->ip = $_SERVER['REMOTE_ADDR'];
             $this->confirm_subscriptor_db($this->email);
             $this->message = $this->added;
         } elseif ('0' == $action) { // remove this subscriber                     
-           $this->delete_subscriptor($this->email);            
-           $this->message = $this->deleted;          
+            $this->delete_subscriptor($this->email);
+            $this->message = $this->deleted;
         }
-
         if ('' != $this->message) {
             return $this->message;
         }
     }
 
     /**
-     * confirm a subscriber
+     * performs the confirmaton of a subscriber on the database
      * 
      * @since 1
      *
@@ -232,7 +238,7 @@ class BreakingNewsMail_Controller {
     }
 
     /**
-     * delete a subscriber
+     * delete a subscriber from the db
      * 
      * @since 1
      *
@@ -247,16 +253,23 @@ class BreakingNewsMail_Controller {
         }
         if (!$this->is_email_subscribed($email))
             return false;
-        
+
         ////$wpdb->get_results("DELETE FROM " . BNM_USERS . " WHERE CAST(email as binary)='$email'");
         $result = $wpdb->get_results("UPDATE " . BNM_USERS . " SET status=0 WHERE CAST(email as binary)='$email'");
-        return  $result;
+        return $result;
     }
 
     /* Email related functions */
 
-    /* Construct unsubscribe link */
-
+    /**
+     * Construct unsubscribe link
+     * 
+     * @since 1
+     *
+     * @param    email    $email    users email
+     * @param    mailtext  $mailtext    the text of the email
+     * @return   mailtext with the link for unsubscriptions
+     */
     private function construct_unsubscribe_link($email, $mailtext) {
         $id = $this->get_id($email);
         if (!$id) {
@@ -277,7 +290,7 @@ class BreakingNewsMail_Controller {
      * validate if an email is already registered
      * @since 1
      *
-     * @param    confirmed    $confirmed    users email
+     * @param    email    $email    users email
      * @return   boolean
      */
 
@@ -296,10 +309,10 @@ class BreakingNewsMail_Controller {
     }
 
     /*
-     * validate if an email is already registered
+     * validate if an email is already registered and confirmed
      * @since 1
      *
-     * @param    confirmed    $confirmed    users email
+     * @param    email    $email    users email
      * @return   boolean
      */
 
@@ -336,10 +349,10 @@ class BreakingNewsMail_Controller {
     }
 
     /*
-     * validate if an email is already registered
+     * validate if an email is confirmed
      * @since 1
      *
-     * @param    confirmed    $confirmed    users email
+     * @param    email    $email    users email
      * @return   boolean
      */
 
@@ -354,11 +367,12 @@ class BreakingNewsMail_Controller {
         return $isActive;
     }
 
-    /* Performs string substitutions for bnm mail tags
+    /*
+     * Performs string substitutions for bnm mail tags
      * @since 1
      *
-     * @param    confirmed    $confirmed    users email
-     * @return   boolean
+     * @param    string $string is the string which contain the email text
+     * @return   string $string
      */
 
     function substitute_email_tags($string = '') {
@@ -375,11 +389,12 @@ class BreakingNewsMail_Controller {
         return $string;
     }
 
-    /*  Construct standard set of email headers
+    /*
+     * Construct standard set of email headers
      * @since 1
      *
-     * @param    confirmed    $confirmed    users email
-     * @return   boolean
+     * @param    type of content    $type   text or html
+     * @return   string $headers
      */
 
     function construct_standard__email_headers($type = 'text') {
@@ -421,14 +436,13 @@ class BreakingNewsMail_Controller {
         return $headers;
     }
 
-    /*  Send confirmation email to a public subscriber
+    /*  Creates an sends the subscription confirmation email 
      * @since 1
-     *
-     * @param    confirmed    $confirmed    users email
-     * @return   boolean
+     *   
+     * @return   boolean 
      */
 
-    function send_confirm($is_unsubscribe = false) {
+    function send_confirm() {
         if (!$this->email) {
             return false;
         }
@@ -441,41 +455,28 @@ class BreakingNewsMail_Controller {
         // HASH = md5 hash of email address
         // ID = user's ID in the bnm table
         // use home instead of siteurl incase index.php is not in core wordpress directory
+
         $url = $this->get_confirmation_page_link();
         $link = $url . "/?bnm=";
-
         // sort the headers now so we have all substitute_email_tags information
         $mailheaders = $this->construct_standard__email_headers();
-
-        if ($is_unsubscribe == true) {
-            $link .= '0';
-            $body = $this->substitute_email_tags(stripslashes($this->bnm_options['unsubscribe_email']));
-            $body = str_replace("{UNSUBCSCRIBE_ACTION}", $this->unsubscribe, $body);
-            $subject = str_replace("{UNSUBCSCRIBE_ACTION}", $this->unsubscribe, $this->bnm_options['confirm_subject']);
-            $subject = html_entity_decode($this->substitute_email_tags(stripslashes($subject)), ENT_QUOTES);
-        } else {
-            $link .= '1';
-            $body = $this->substitute_email_tags(stripslashes($this->bnm_options['confirm_email']));
-            $body = str_replace("{CONFIRMATION_ACTION}", $this->subscribe, $body);
-            $subject = str_replace("{CONFIRMARTION_ACTION}", $this->subscribe, $this->bnm_options['confirm_subject']);
-            $subject = html_entity_decode($this->substitute_email_tags(stripslashes($subject)), ENT_QUOTES);
-        }
+        $link .= '1';
+        $body = $this->substitute_email_tags(stripslashes($this->bnm_options['confirm_email']));
+        $body = str_replace("{CONFIRMATION_ACTION}", $this->subscribe, $body);
+        $subject = str_replace("{CONFIRMARTION_ACTION}", $this->subscribe, $this->bnm_options['confirm_subject']);
+        $subject = html_entity_decode($this->substitute_email_tags(stripslashes($subject)), ENT_QUOTES);
         $link .= md5($this->email);
         $link .= $id;
         $body = str_replace("{LINK}", $link, $body);
-        if ($is_unsubscribe == true && function_exists('wpmq_mail')) {
-            //could be sending lots of reminders so queue them if wpmq is enabled
-            wp_mail($this->email, $subject, $body, $mailheaders, '', 0);
-        } else {
-            return wp_mail($this->email, $subject, $body, $mailheaders);
-        }
+        return @wp_mail($this->email, $subject, $body, $mailheaders);
     }
 
-    /*  Sends an email notification of a new post
+    /*
+     * Sends an email notification when a new post is published
      * @since 1
      *
-     * @param    confirmed    $confirmed    users email
-     * @return   boolean
+     * @param    post    $post   post global object
+     * @param    preview    $preview   if an editor wants to see a preview  
      */
 
     function send_breaking_new_email_alert($post = 0, $preview = '') {
@@ -572,7 +573,7 @@ class BreakingNewsMail_Controller {
                 $this->sender_name = 'Plain Text Excerpt Preview';
                 $this->deliver_email(array($preview), $subject, $excerpt_body);
             } else {
-                //  $subscribers = apply_filters('bnm_send_plain_excerpt_suscribers',  $subscribers, $post->ID);
+                $subscribers = apply_filters('bnm_send_plain_excerpt_suscribers', $subscribers, $post->ID);
                 $this->deliver_email($subscribers, $subject, $excerpt_body);
             }
         } elseif ($this->bnm_options['email_format'] == "html") {
@@ -605,16 +606,20 @@ class BreakingNewsMail_Controller {
                 $this->sender_name = 'HTML Excerpt Preview';
                 $this->deliver_email(array($preview), $subject, $html_excerpt_body, 'html');
             } else {
-                //  $subscribers = apply_filters('bnm_send_html_excerpt_suscribers',  $subscribers, $post->ID);
+                $subscribers = apply_filters('bnm_send_html_excerpt_suscribers', $subscribers, $post->ID);
                 $this->deliver_email($subscribers, $subject, $html_excerpt_body, 'html');
             }
         }
     }
 
-    /* Delivers email to recipients in HTML or plaintext
+    /*
+     * Delivers email to recipients in HTML or plaintext for the email alert
      * @since 1
      *
-     * @param    confirmed    $confirmed    users email
+     * @param    array    $recipients  array of all emails
+     * @param    string   $subject  the subject of the email
+     * @param    string    $message  the message of the email
+     * @param    string    $type  type of content of the email
      * @return   boolean
      */
 
@@ -657,8 +662,6 @@ class BreakingNewsMail_Controller {
                     @wp_mail($recipient, $subject, $mailtext_to_send, $headers);
                 }
             }
-            //  continue;
-
             return true;
         } /* elseif ($this->bnm_options['bcclimit'] == 0) {
           // we're not using BCCLimit
@@ -713,25 +716,26 @@ class BreakingNewsMail_Controller {
 
         reset($recipients);
         // actually send mail
-        if (isset($batch) && !empty($batch)) {
-            foreach ($batch as $bcc) {
-                $newheaders = $headers . "$bcc\n";
-               // $status = @wp_mail($this->sender_email, $subject, $mailtext, $newheaders);
-            }
-        } elseif ($this->bnm_options['bcclimit'] != 1 && count($recipients) != 1) {
-            //$status = @wp_mail($this->sender_email, $subject, $mailtext, $headers);
-        }
+        /*   if (isset($batch) && !empty($batch)) {
+          foreach ($batch as $bcc) {
+          $newheaders = $headers . "$bcc\n";
+          // $status = @wp_mail($this->sender_email, $subject, $mailtext, $newheaders);
+          }
+          } elseif ($this->bnm_options['bcclimit'] != 1 && count($recipients) != 1) {
+          //$status = @wp_mail($this->sender_email, $subject, $mailtext, $headers);
+          } */
         $status = true;
         return $status;
     }
 
     /* Administration actions */
 
-    /* saves the settings of the menu page
+    /*
+     * saves the settings of the menu page
      * @since 1
      *
-     * @param    confirmed    $confirmed    users email
-     * @return   boolean
+     * @param    array   $_POST  post global var
+     * @return   array $options the options after being saved
      */
 
     function save_settings($_POST) {
@@ -784,6 +788,14 @@ class BreakingNewsMail_Controller {
         return $this->get_bnm_options();
     }
 
+    /*
+     * Procces the public petitions for subscription
+     * @since 1
+     *
+     * @param    array   $_POST  post global var
+     * @return   string  $message Its a feedback message
+     */
+
     function proccess_public_subscribers($_POST) {
         $sub_error = '';
         $sub_error_not_email = "";
@@ -808,6 +820,14 @@ class BreakingNewsMail_Controller {
             echo "<div id=\"message\" class=\"error\"><p><strong>" . 'Some emails were not processed, the following were already subscribed' . ":<br />$sub_error</strong></p></div>";
         }
     }
+
+    /*
+     * Procces the admin petitions for subscription
+     * @since 1
+     *
+     * @param    array   $_POST  post global var
+     * @return   array  $subscribers all the subscribers to be shown on the admin table
+     */
 
     function process_subscribers_admin_form($_POST) {
         global $wpdb, $bnmnonce;
@@ -881,7 +901,6 @@ class BreakingNewsMail_Controller {
                 echo $message;
             } elseif (isset($_POST['searchterm']) && $_POST['searchterm']) {
                 $subscribers = $this->get_all_subscribers();
-                //$result = Array();
                 foreach ($subscribers as $subscriber) {
                     // echo $subscriber;
                     if (is_numeric(stripos($subscriber, $_POST['searchterm']))) {
@@ -895,9 +914,14 @@ class BreakingNewsMail_Controller {
 
     /* micelanious */
 
-    /**
-      Create and display a dropdown list of pages
+    /*
+     * Create and display a dropdown list of pages
+     * @since 1
+     *
+     * @param    int   $bnmpage page id selected
+     * @return   string  $option string which contains all the options to be shown
      */
+
     function pages_dropdown($bnmpage) {
         global $wpdb;
         $sql = "SELECT ID, post_title FROM $wpdb->posts WHERE post_type='page' AND post_status='publish'";
@@ -919,111 +943,11 @@ class BreakingNewsMail_Controller {
         echo $option;
     }
 
-// end pages_dropdown()
-
-    /* handles (un)subscribe requests
+    /*
+     * Export subscribers information to CSV file
      * @since 1
-     *
-     * @param    confirmed    $confirmed    users email
-     * @return   boolean
-     */
-
-    //NEVER USED
-    function handle_un_suscribe_request($atts) {
-        extract(shortcode_atts(array(
-                    'hide' => '',
-                    'id' => '',
-                    'url' => '',
-                    'nojs' => 'false',
-                    'link' => '',
-                    'size' => 20
-                        ), $atts));
-
-        // if link is true return a link to the page with the ajax class
-        if ($link !== '' && !is_user_logged_in()) {
-            $this->bnmform = "<a href=\"" . get_permalink($this->bnm_options['bnmpage']) . "\" class=\"bnmpopup\">" . $link . "</a>\r\n";
-            return $this->bnmform;
-        }
-
-        // if a button is hidden, show only other
-        /* if ($hide == 'subscribe') {
-          $this->input_form_action = "<input type=\"submit\" name=\"unsubscribe\" value=\"" . 'Unsubscribe' . "\" />";
-          } elseif ($hide == 'unsubscribe') {
-          $this->input_form_action = "<input type=\"submit\" name=\"subscribe\" value=\"" . 'Subscribe' . "\" />";
-          } else {
-          // both form input actions
-          $this->input_form_action = "<input type=\"submit\" name=\"subscribe\" value=\"" . 'Subscribe' . "\" />&nbsp;<input type=\"submit\" name=\"unsubscribe\" value=\"" . 'Unsubscribe' . "\" />";
-          } */
-
-        // if ID is provided, get permalink
-        if ($id) {
-            $url = get_permalink($id);
-        } elseif ($this->bnm_options['bnmpage'] > 0) {
-            $url = get_permalink($this->bnm_options['bnmpage']);
-        } else {
-            $url = get_site_url();
-        }
-        /* // build default form
-          if ($nojs == 'true') {
-          $this->form = "<form method=\"post\" action=\"" . $url . "\"><input type=\"hidden\" name=\"ip\" value=\"" . $_SERVER['REMOTE_ADDR'] . "\" /><p><label for=\"bnmemail\">" . 'Your email:' . "</label><br /><input type=\"text\" name=\"email\" id=\"bnmemail\" value=\"\" size=\"" . $size . "\" /></p><p>" . $this->input_form_action . "</p></form>";
-          } else {
-          $this->form = "<form method=\"post\" action=\"" . $url . "\"><input type=\"hidden\" name=\"ip\" value=\"" . $_SERVER['REMOTE_ADDR'] . "\" /><p><label for=\"bnmemail\">" . 'Your email:' . "</label><br /><input type=\"text\" name=\"email\" id=\"bnmemail\" value=\"" . 'Enter email address...' . "\" size=\"" . $size . "\" onfocus=\"if (this.value == '" . 'Enter email address...' . "') {this.value = '';}\" onblur=\"if (this.value == '') {this.value = '" . 'Enter email address...' . "';}\" /></p><p>" . $this->input_form_action . "</p></form>\r\n";
-          }
-          $this->bnmform = $this->form; */
-
-
-        if (isset($_POST['unsubscribe']) || isset($_POST['subscribe'])) {
-            global $wpdb, $user_email;
-            if (!is_email($_POST['email'])) {
-                $this->bnmform = $this->form . $this->not_an_email;
-            } else {
-                $this->email = is_email($_POST['email']);
-
-
-                $this->ip = $this->get_visitor_ip_addr();
-                if (isset($_POST['subscribe'])) {
-                    // lets see if they've tried to subscribe previously
-                    if (!$this->is_email_subscribed($this->email)) {
-                        // the user is unknown or inactive
-                        $this->add_subscriptor($this->email, $this->ip);
-                        $status = $this->send_confirm('add');
-
-                        // set a variable to denote that we've already run, and shouldn't run again
-                        $this->filtered = 1;
-                        if ($status) {
-                            $this->bnmform = $this->confirmation_sent;
-                        } else {
-                            $this->bnmform = $this->error;
-                        }
-                    } else {
-                        // they're already subscribed
-                        $this->bnmform = $this->already_subscribed;
-                    }
-                    $this->action = 'subscribe';
-                } elseif (isset($_POST['unsubscribe'])) {
-                    if (!$this->is_email_subscribed($this->email)) {
-                        $this->bnmform = $this->form . $this->not_subscribed;
-                    } else {
-                        $status = $this->send_confirm('del');
-                        $this->filtered = 1;
-                        if ($status) {
-                            $this->bnmform = $this->confirmation_sent;
-                        } else {
-                            $this->bnmform = $this->error;
-                        }
-                    }
-                    $this->action = 'unsubscribe';
-                }
-            }
-        }
-        return $this->bnmform;
-    }
-
-    /* Export subscriber emails and other details to CSV
-     * @since 1
-     *
-     * @param    confirmed    $confirmed    users email
-     * @return   boolean
+     *  
+     * @return   cvs file
      */
 
     function exportSubscribersToCSV() {
@@ -1043,7 +967,12 @@ class BreakingNewsMail_Controller {
     }
 
     /*
-      Get an object of all categories, include default and custom type
+     * Get an object of all categories, include default and custom type
+     * @since 1
+     *
+     * @param    boolean   $exclude excluded categories
+     * @param    orderby   $orderby criteria for order the cats
+     * @return   string  $option string which contains all the options to be shown
      */
 
     function all_cats($exclude = false, $orderby = 'slug') {
@@ -1072,6 +1001,12 @@ class BreakingNewsMail_Controller {
         return $all_cats;
     }
 
+    /*
+     * Sets all default messages to be shown
+     * @since 1
+     *     
+     */
+
     function messages_to_show() {
         $this->confirmation_sent = 'Confirmation sent';
         $this->already_subscribed = 'Already subscribed';
@@ -1093,6 +1028,13 @@ class BreakingNewsMail_Controller {
 
     /*     * ****** Geters ******* */
 
+    /*
+     * Get the link of the page to be shown when a user clicks on the confirmation link
+     * @since 1
+     *     
+     * @return   string  $url page link
+     */
+
     function get_confirmation_page_link() {
         $url = get_site_url();
         if ($this->bnm_options['bnmpage'] > 0) {
@@ -1102,11 +1044,12 @@ class BreakingNewsMail_Controller {
         return $url;
     }
 
-    /*  Function to add UTM tracking details to links
+    /*
+     * Function to add UTM tracking details to links
      * @since 1
      *
-     * @param    confirmed    $confirmed    users email
-     * @return   boolean
+     * @param    link    $link    initial link
+     * @return   link with the UTM tracking
      */
 
     function get_tracking_link($link) {
@@ -1121,12 +1064,13 @@ class BreakingNewsMail_Controller {
         }
     }
 
-    /* Given a public subscriber ID, returns the email address
+    /*
+     * Given a public subscriber ID, returns the email address
      * 
      * @since 1
      *
-     * @param    email    $email    users email
-     * @return   array
+     * @param    id    $id    user id
+     * @return   $email  email of the user
      */
 
     function get_email($id = 0) {
@@ -1136,32 +1080,22 @@ class BreakingNewsMail_Controller {
             return false;
         }
 
-        return $wpdb->get_var("SELECT email FROM " . BNM_USERS . " WHERE id=$id");
+        return $wpdb->get_var("SELECT email FROM " . BNM_USERS . " WHERE id=$id and status=1");
     }
 
-    /* Collects the signup date for all  subscribers
+    /*
+     * Collects the signup date for subscribers
      * 
      * @since 1
      *
      * @param    email    $email    users email
-     * @return   array
+     * @return   signup date
      */
 
     function get_signup_date($email = '') {
-
-        /* global $wpdb;
-          if ($email == "") {
-          $results = $wpdb->get_results("SELECT email, date FROM " . BNM_USERS . " and status=1", ARRAY_N);
-          return $results;
-          }else{
-          $results = $wpdb->get_results("SELECT date FROM " . BNM_USERS . " WHERE CAST(email as binary) = '$email' and status=1" , ARRAY_N);
-          return $results[0];
-          } */
-
         if ('' == $email) {
             return false;
         }
-
         global $wpdb;
         if (!empty($this->signup_dates)) {
             return date_format(date_create($this->signup_dates[$email]), 'd-m-Y');
@@ -1174,22 +1108,16 @@ class BreakingNewsMail_Controller {
         }
     }
 
-    /* Collects the ip address for all public subscribers
+    /*
+     * Collects the ip address for subscribers
      * 
      * @since 1
      *
      * @param    email    $email    users email
-     * @return   array
+     * @return   sign up ip
      */
 
     function get_signup_ip($email = '') {
-        /* if ($email == "") {
-          $results = $wpdb->get_results("SELECT email, ip FROM " . BNM_USERS . " and status=1", ARRAY_N);
-          return $results;
-          }else{
-          $results = $wpdb->get_results("SELECT ip FROM " . BNM_USERS . " WHERE CAST(email as binary) = '$email' and status=1", ARRAY_N);
-          return $results[0];
-          } */
         if ('' == $email) {
             return false;
         }
@@ -1205,6 +1133,14 @@ class BreakingNewsMail_Controller {
         }
     }
 
+    /*
+     * Gets the ip address of the visitor
+     * 
+     * @since 1
+     *    
+     * @return   ip address
+     */
+
     function get_visitor_ip_addr() {
         if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
             $ip = $_SERVER['HTTP_CLIENT_IP'];
@@ -1218,11 +1154,11 @@ class BreakingNewsMail_Controller {
 
     /*
      * Collects the email address for all  confirmed  or unconfirmed subscribers
-     * default confirmed
+     * default confirmed ones
      * @since 1
      *
      * @param    confirmed    $confirmed    users email
-     * @return   array
+     * @return   array $emails
      */
 
     function get_all_emails($confirmed = 1) {
@@ -1235,23 +1171,7 @@ class BreakingNewsMail_Controller {
     }
 
     /*
-     * Given a public subscriber ID, returns the email address
-     * @since 1
-     *
-     * @param    confirmed    $confirmed    users email
-     * @return   array
-     */
-
-    function get_single_email($id = 0) {
-        global $wpdb;
-
-        if (!$id) {
-            return false;
-        }
-        return $wpdb->get_var("SELECT email FROM " . BNM_USERS . " WHERE id=$id and status=1");
-    }
-
-    /* Given a public subscriber email, returns the subscriber ID
+     * Given a public subscriber email, returns the subscriber ID
      * @since 1
      *
      * @param    email   $email    users email
@@ -1260,16 +1180,29 @@ class BreakingNewsMail_Controller {
 
     function get_id($email = '') {
         global $wpdb;
-
         if (!$email) {
             return false;
         }
         return $wpdb->get_var("SELECT id FROM " . BNM_USERS . " WHERE CAST(email as binary)='$email' and status=1");
     }
 
+    /*
+     * Get the bnm options array
+     * @since 1
+     *   
+     * @return  array bnm options
+     */
+
     function get_bnm_options() {
         return get_option('bnm_options');
     }
+
+    /*
+     * Get all subscribers
+     * @since 1
+     *        
+     * @return  array subscribers
+     */
 
     function get_all_subscribers() {
         $confirmed = $this->get_all_emails();
@@ -1277,8 +1210,16 @@ class BreakingNewsMail_Controller {
         return array_merge((array) $confirmed, (array) $unconfirmed);
     }
 
-    function get_subscribers($_GET, $_POST) {
+    /*
+     * Get all subscribers to be shown on the admin page
+     * @since 1
+     *   
+     * @param        $_GET    global var
+     * @param        $_POST   global var
+     * @return  array subscribers
+     */
 
+    function get_subscribers($_GET, $_POST) {
         $confirmed = $this->get_all_emails();
         $unconfirmed = $this->get_all_emails(0);
 
@@ -1288,7 +1229,6 @@ class BreakingNewsMail_Controller {
         if ($unconfirmed == '') {
             $unconfirmed = array();
         }
-
         $urlpath = str_replace("\\", "/", BNM_PATH);
         $urlpath = trailingslashit(get_option('siteurl')) . substr($urlpath, strpos($urlpath, "wp-content/"));
         if (isset($_GET['bnmpage'])) {
@@ -1296,7 +1236,6 @@ class BreakingNewsMail_Controller {
         } else {
             $page = 1;
         }
-
         if (isset($_POST['what'])) {
             $page = 1;
 
@@ -1329,26 +1268,24 @@ class BreakingNewsMail_Controller {
             $subscribers = &$this->search_result;
             $what = 'public';
         }
-
         $return = Array();
         $return [$what] = $subscribers;
-
         return $return;
     }
 
-    /* Ajax functions */
+    /*
+     * Load all js required for this plugin
+     * @since 1
+     *     
+     */
 
     function bnm_load_jquery() {
-        wp_enqueue_script('jquery');
-        wp_enqueue_script('jquery-ui-core');
-        wp_enqueue_script('jquery-ui-dialog');
-        wp_enqueue_script('jquery-form', plugin_dir_url(__FILE__) . '../js/jquery.form.js');
+        wp_enqueue_script('jquery');        
+        wp_enqueue_script('jquery-form');                
+        //wp_enqueue_script('jquery-form', plugin_dir_url(__FILE__) . '../js/jquery.form.js');
         wp_enqueue_script('jquery-validate', plugin_dir_url(__FILE__) . '../js/jquery.validate.js');
         wp_enqueue_script('jquery-validate-spanish', plugin_dir_url(__FILE__) . '../js/messages_es.js');
         wp_enqueue_script('bnm_ajax', plugin_dir_url(__FILE__) . '../js/bnm_subscription_ajax.js');
-        wp_register_style('jquery-ui-style', apply_filters('bnm_jqueryui_css', 'http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/themes/ui-darkness/jquery-ui.css'));
-        wp_enqueue_style('jquery-ui-style');
-
         // Get current page protocol
         $protocol = isset($_SERVER["HTTPS"]) ? 'https://' : 'http://';
         // Output admin-ajax.php URL with same protocol as current page
@@ -1358,15 +1295,18 @@ class BreakingNewsMail_Controller {
         wp_localize_script('bnm_ajax', 'bnm_ajax', $params);
     }
 
-    /**
-      Insert Javascript and CSS into admin_header
+    /*
+     * Load the javascript only in the admin page
+     * @since 1
+     *            
      */
+
     function checkbox_form_js() {
         $this->script_debug = ( defined('SCRIPT_DEBUG') && SCRIPT_DEBUG ) ? '.dev' : '';
-
         wp_register_script('s2_checkbox', plugin_dir_url(__FILE__) . '../js/s2_checkbox' . $this->script_debug . '.js', array('jquery'), '1.1');
         wp_enqueue_script('s2_checkbox');
     }
 
 }
+
 ?>
