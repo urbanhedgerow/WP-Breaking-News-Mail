@@ -2,8 +2,8 @@
 
 /*
   Plugin Name: WP Breaking News Mail
-  Plugin URI: http://breakingNewsMail.wordpress.com
-  Description: Notifies an email list when a Breaking News occur
+  Plugin URI: https://github.com/DanielaValero/WP-Breaking-News-Mail
+  Description: Notifies an email list when a Breaking News occur. Based on Subscribe2 from Matthew Robinson
   Version: 1
   Author: Daniela Valero
   Author URI: http://twitter.com/danielavalero_
@@ -43,19 +43,21 @@ define('BNM_USERS', $wpdb->get_blog_prefix() . 'bnm_users');
 
 require_once 'includes/BreakingNewsMail_Widget.php';
 require_once 'includes/BreakingNewsMail_Admin.php';
+require_once 'includes/BreakingNewsMail_Controller.php';
 
-
-$bnm = new WP_Breaking_News_Mail_Main;
+ $bnm = new WP_Breaking_News_Mail_Main;
 
 class WP_Breaking_News_Mail_Main {
 
     private $bnm_options = array();
+   private $objBreakingNewsMail_Controller;
 
     public function __construct() {
         // Call Wpsqt_Installer Class to write in WPSQT tables on activation 
-        register_activation_hook(__FILE__, array(&$this,'bnm_main_install'));
+        register_activation_hook(__FILE__, array(&$this, 'bnm_main_install'));
         //ver donde llamo esto que no me de error
         //register_uninstall_hook(__FILE__, array(&$this,'bnm_unistall'));
+        $this->objBreakingNewsMail_Controller = $objBreakingNewsMail_Controller = new BreakingNewsMail_Controller();
         if (is_admin()) {
             if (is_multisite()) {
                 echo '<div class="error">This plugin is not fully compatible with 
@@ -65,28 +67,34 @@ class WP_Breaking_News_Mail_Main {
                 $this->setDefaultOptions();
             }
 
+
             if (!empty($this->bnm_options) || !get_option('bnm_options')) {
                 add_option("bnm_options", $this->bnm_options);
             }
-
-            if ( is_admin() ) { 
-                $objBreakingNewsMail_Admin = new BreakingNewsMail_Admin();
-            }  else {
-                $objBreakingNewsMail_Controller = new BreakingNewsMail_Controller();
-            }     
+            $objBreakingNewsMail_Admin = new BreakingNewsMail_Admin();
+            
+           add_action('wp_ajax_bnm_process_subscription',array(&$this, 'bnm_process_subscription'));
+        }else{
+            add_action('wp_ajax_nopriv_bnm_process_subscription',array(&$this, 'bnm_process_subscription'));
+          
         }
-        
         add_action('widgets_init', function() {
-                        return register_widget('BreakingNewsMail_Widget');
-                    });
+                    return register_widget('BreakingNewsMail_Widget');
+                });
     }
 
+    
+    function bnm_process_subscription(){ 
+       if (!check_ajax_referer('bnm_nonce'))
+           exit();       
+        $this->objBreakingNewsMail_Controller->proccess_public_subscribers($_POST);            
+        die();
+    }   
     function bnm_main_install() {
         global $wpdb;
         $wpdb->query("CREATE TABLE IF NOT EXISTS `" . BNM_USERS . "` (
 			id int(11) NOT NULL auto_increment,
-			email varchar(64) NOT NULL default '',
-                        id_category int(11) NULL,
+			email varchar(64) NOT NULL default '',                       
 			active tinyint(1) default 0,
                         status tinyint(1) default 1,
 			date DATE default '" . date('Y-m-d') . "' NOT NULL,
@@ -111,12 +119,12 @@ class WP_Breaking_News_Mail_Main {
             $this->bnm_options['wpregdef'] = "no";
         } // option to check registration form box by default
 
-        if (empty($this->bnm_options['autoformat'])) {
-            $this->bnm_options['autoformat'] = "text";
+        if (empty($this->bnm_options['email_format'])) {
+            $this->bnm_options['email_format'] = "text";
         } // option for default auto-subscription email format
 
         if (empty($this->bnm_options['bcclimit'])) {
-            $this->bnm_options['bcclimit'] = 0;
+            $this->bnm_options['bcclimit'] = 1;
         } // option for default bcc limit on email notifications
 
         if (empty($this->bnm_options['tracking'])) {
@@ -125,20 +133,7 @@ class WP_Breaking_News_Mail_Main {
 
         if (empty($this->bnm_options['bnmpage'])) {
             $this->bnm_options['bnmpage'] = 0;
-        } // option for default WordPress page for bnm to use
-
-        if (empty($this->bnm_options['stylesheet'])) {
-            $this->bnm_options['stylesheet'] = "yes";
-        } // option to include link to theme stylesheet from HTML notifications
-
-        if (empty($this->bnm_options['pages'])) {
-            $this->bnm_options['pages'] = "no";
-        } // option for sending notifications for WordPress pages
-
-        if (empty($this->bnm_options['password'])) {
-            $this->bnm_options['password'] = "no";
-        } // option for sending notifications for posts that are password protected
-
+        } // option for default WordPress page for bnm to use        
 
         if (empty($this->bnm_options['exclude'])) {
             $this->bnm_options['exclude'] = "";
@@ -148,45 +143,24 @@ class WP_Breaking_News_Mail_Main {
             $this->bnm_options['sender_email'] = "author@email.com";
         } // option for email notification sender
 
-        if (empty($this->bnm_options['show_meta'])) {
-            $this->bnm_options['show_meta'] = "0";
-        } // option to display link to bnm page from 'meta'
+
 
         if (empty($this->bnm_options['show_button'])) {
             $this->bnm_options['show_button'] = "1";
         } // option to show bnm button on Write page
 
-        if (empty($this->bnm_options['ajax'])) {
-            $this->bnm_options['ajax'] = "0";
-        } // option to enable an AJAX style form
-
-        if (empty($this->bnm_options['widget'])) {
-            $this->bnm_options['widget'] = "0";
-        } // option to enable bnm Widget
-
-
-        if (empty($this->bnm_options['bnmmeta_default'])) {
-            $this->bnm_options['bnmmeta_default'] = "0";
-        } // option for bnm over ride postmeta to be checked by default
 
         if (empty($this->bnm_options['entries'])) {
             $this->bnm_options['entries'] = 25;
         } // option for the number of subscribers displayed on each page
 
-        if (empty($this->bnm_options['barred'])) {
-            $this->bnm_options['barred'] = "";
-        } // option containing domains barred from public registration
-
-        if (empty($this->bnm_options['exclude_formats'])) {
-            $this->bnm_options['exclude_formats'] = "";
-        } // option for excluding post formats as supported by the current theme
 
         if (empty($this->bnm_options['mailtext'])) {
-            $this->bnm_options['mailtext'] = __("{BLOGNAME} has posted a new item, '{TITLE}'\n\n{POST}\n\nYou may view the latest post at\n{PERMALINK}\n\nYou received this e-mail because you asked to be notified when new updates are posted.\nBest regards,\n {BLOGNAME} Team", "bnm");
+            $this->bnm_options['mailtext'] = __("{BLOGNAME} has posted a new item, '{TITLE}'\n\n{POST}\n\nYou may view the latest post at\n{PERMALINK}\n\nYou received this e-mail because you asked to be notified when new updates are posted. If you don't want receive anymore this email please click in the following link {UNSUBSCRIBE_ACTION} \nBest regards,\n {BLOGNAME} Team", "bnm");
         } // Default notification email text
-        
+
         if (empty($this->bnm_options['notification_subject'])) {
-        $this->bnm_options['notification_subject'] = "[{BLOGNAME}] TITLE";
+            $this->bnm_options['notification_subject'] = "[{BLOGNAME}] TITLE";
         } // Default notification email subject
 
         if (empty($this->bnm_options['confirm_email'])) {

@@ -19,44 +19,70 @@ class BreakingNewsMail_Admin {
     function __construct() {
         add_action('admin_menu', array(&$this, 'bnm_add_page'));
         $this->bnm_options = get_option('bnm_options');
-        $this->objController = new BreakingNewsMail_Controller();
-        //update_option('bnm_options', $this->bnm_options);
+        $this->objController = new BreakingNewsMail_Controller();      
     }
 
     function bnm_add_page() {
-        add_menu_page('Breaking news mail', 'Breaking Settings', 'manage_options', 'bnm-menu', array($this, 'bnm_settings_page'));
-        add_submenu_page('bnm-menu', 'Subscribers', 'Subscribers', 'manage_options', 'bnm_settings', array(&$this, 'bnm_subscribers_page'));
+        //wp_enqueue_script( 'boj_insertjs_1', BOJ_INSERTJS.'/admin.js');
+        $settings = add_menu_page('Breaking news mail', 'Breaking Settings', 'manage_options', 'bnm-menu', array($this, 'bnm_settings_page'));
+        add_action("admin_print_scripts-$settings", array(&$this->objController, 'checkbox_form_js'));
+        $subscrbers = add_submenu_page('bnm-menu', 'Subscribers', 'Subscribers', 'manage_options', 'bnm_settings', array(&$this, 'bnm_subscribers_page'));
+        add_action("admin_print_scripts-$subscrbers", array(&$this->objController, 'checkbox_form_js'));
+        
+        
+        
     }
-
-   
     
     // Draw the option page
     function bnm_settings_page() {
-         $this->bnm_options = $this->objController->save_settings($_POST);
-        
+         $this->bnm_options = $this->objController->save_settings($_POST);   
+         // $l = get_permalink($this->bnm_options['bnmpage']);
+        //  echo $l;
         ?>
         <div class="wrap">
             <div id="icon-tools" class="icon32"></div>
             <h2>Breaking News Mail Settings Page</h2>
             <form action="<?php echo esc_url($_SERVER['REQUEST_URI']); ?>" method="post">
         <?php settings_fields('bnm_settings_options'); ?>
+                <h3>General settings</h3>                
         <?php do_settings_sections('bnm_settings'); ?>
                 <br /><br />
                 <?php $this->display_category_form(explode(',', $this->bnm_options['exclude'])); ?>
-
                 <br /><br />
                 Add Tracking Parameters to the Permalink:
                 <input type="text" name="tracking" value="<?php echo stripslashes($this->bnm_options['tracking']) ?>" size="50" />
-                <br />eg. utm_source= bnm&utm_medium=email&utm_campaign=postnotify<br /><br />
-
+                <br />eg. utm_source= bnm&utm_medium=email&utm_campaign=postnotify
+                <br /><br />
+                <h3> Email sending settings</h3>
                 <br /><br />
                 sender_email email:
                 <input type="text" name="sender_email" value="<?php echo stripslashes($this->bnm_options['sender_email']) ?>" size="50" />
                 <br /><br />
-
+                Restrict the number of recipients per email to (0 for unlimited)
+                 <span id="bnmbcc_1">                     
+                     <input type="text" name="bbclimit" value="<?php echo $this->bnm_options['bcclimit'] ?>" />                     
+                 </span>
+                 <br /><br />
+                 Email excerpt format:
+                <label>
+                    <input type="radio" name="email_format" value="html"<?php checked($this->bnm_options['email_format'], 'html', true) ?> />
+                    HTML
+                </label>&nbsp;&nbsp;
+                    
+                <label>
+                   <input type="radio" name="email_format" value="text" <?php checked($this->bnm_options['email_format'], 'text', true) ?> />
+                   Plain Text
+                </label><br /><br />
+                
+                <label>
+                    Set default page to be shown to users as confirmation message: 
+                    <select name="page">
+                    <?php echo $this->objController->pages_dropdown($this->bnm_options['bnmpage']); ?>
+                    </select>
+                </label><br /><br />                
 
                 <div class="" id="bnm_template">
-                    <h2>Email templates</h2>
+                    <h3>Email templates</h3>
                     <br />
                     <table width="100%" cellspacing="2" cellpadding="1" class="editform">
                         <tr><td>
@@ -73,15 +99,13 @@ class BreakingNewsMail_Admin {
                                     <dt><b>{BLOGNAME}</b></dt><dd><?php get_option('blogname') ?></dd>
                                     <dt><b>{BLOGLINK}</b></dt><dd><?php get_option('home') ?></dd>
                                     <dt><b>{TITLE}</b></dt><dd> the post's title<br />(<i>for per-post emails only</i>) </dd>
-                                    <dt><b>{POST}</b></dt><dd> the excerpt or the entire post<br />(<i>based on the subscriber's preferences</i>) </dd>		 		 		 
+                                    <dt><b>{POST}</b></dt><dd> the excerpt of the entire post </dd>		 		 		 
                                     <dt><b>{PERMALINK}</b></dt><dd> the post's permalink<br />(<i>for per-post emails only</i>) </dd>		 
                                     <dt><b>{DATE}</b></dt><dd> the date the post was made<br />(<i>for per-post emails only</i>) </dd>
                                     <dt><b>{TIME}</b></dt><dd> the time the post was made<br />(<i>for per-post emails only</i>) </dd>
                                     <dt><b>{LINK}</b></dt><dd> the generated link to confirm a request<br />(<i>only used in the confirmation email template</i>) </dd> 
                                     <dt><b>{CONFIRMATION_ACTION}</b></dt><dd> Action performed by LINK in confirmation email<br />(<i>only used in the confirmation email template</i>) </dd> 
-                                    <dt><b>{UNSUBSCRIBE_ACTION}</b></dt><dd> Action performed by LINK in confirmation email<br />(<i>only used in the confirmation email template</i>) </dd> 
-                                    <dt><b>{CATS}</b></dt><dd> the post's assigned categories </dd> 
-                                    <dt><b>{TAGS}</b></dt><dd> the post's assigned Tags </dd> 
+                                    <dt><b>{UNSUBSCRIBE_ACTION}</b></dt><dd> This generate a link for unsubscriptions, it is used on email notifications</dd>                                    
                                 </dl></td></tr><tr><td>
                                 Subscribe Subscribe confirmation email:<br /> 
                                 Subject Line:  
@@ -111,8 +135,7 @@ class BreakingNewsMail_Admin {
         }
         $search_term = isset($_POST['searchterm']) ? $_POST["searchterm"] : "";
         
-        $getted_subscribers = $this->objController->process_subscribers_admin_form($_POST);
-        
+        $getted_subscribers = $this->objController->process_subscribers_admin_form($_POST);        
         
         $this->bnm_options = $this->objController->get_bnm_options();
         
@@ -314,14 +337,12 @@ class BreakingNewsMail_Admin {
       Optionally pre-select those categories specified
      */
     function display_category_form($selected = array(), $override = 1) {
-      //  global $wpdb;
-
+      //  global $wpdb;            
         if ($override == 0) {
             $all_cats = $this->objController->all_cats(true);
         } else {
             $all_cats = $this->objController->all_cats(false);
         }
-
         $half = (count($all_cats) / 2);
         $i = 0;
         $j = 0;
@@ -346,8 +367,7 @@ class BreakingNewsMail_Admin {
                     $catName .= $parent->name . ' &raquo; ';
                 }
             }
-            $catName .= $cat->name;
-
+            $catName .= $cat->name;           
             if (0 == $j) {
                 echo"<label><input class=\"checkall_cat\" type=\"checkbox\" name=\"category[]\" value=\"" . $cat->term_id . "\"";
                 if (in_array($cat->term_id, $selected)) {
