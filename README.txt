@@ -19,6 +19,8 @@ You can edit the email templates. The messages in the public form for subscripti
 
 Based on Subscribe2: http://subscribe2.wordpress.com/ from Matthew Robinson
 
+If you have any issue, you can tell me about it through this link: https://github.com/DanielaValero/WP-Breaking-News-Mail/issues
+
 == Installation ==
 1. Log in to your WordPress blog and visit Plugins->Add New.
 2. Search for Breaking News Mail, click "Install Now" and then Activate the Plugin
