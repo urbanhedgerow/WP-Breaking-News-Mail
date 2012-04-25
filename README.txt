@@ -2,7 +2,7 @@
 Contributors: Dahe  
 Tags: breaking news email, email notification alerts
 Requires at least: 2.0.2
-Tested up to: 3.0
+Tested up to: 3.3
 
 
 This is a plugin which sends an email to subscribers each time a Breking News is posted. 

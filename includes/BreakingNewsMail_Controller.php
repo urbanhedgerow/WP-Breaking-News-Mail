@@ -73,7 +73,7 @@ class BreakingNewsMail_Controller {
         } else {
             add_action('wp_enqueue_scripts', array(&$this, 'bnm_load_jquery'));
             add_action('wp_head', array(&$this, 'add_css_bnm'));
-         
+
             if (isset($_GET['bnm'])) {
                 //   echo "someone is confirming a request";
                 if (defined('DOING_BNM_CONFIRM') && DOING_BNM_CONFIRM) {
@@ -493,21 +493,21 @@ class BreakingNewsMail_Controller {
                 return $post;
             }
             $post_cats = wp_get_post_categories($post->ID);
-            $is_post_in_the_cats = true;           
-            
-            
-            foreach (explode(',', $this->bnm_options['include']) as $cat) {                         
-                if (!in_array($cat,$post_cats)) {
-                    $is_post_in_the_cats = false;                    
+            $is_post_in_the_cats = true;
+
+
+            foreach (explode(',', $this->bnm_options['include']) as $cat) {
+                if (!in_array($cat, $post_cats)) {
+                    $is_post_in_the_cats = false;
                 }
             }
-                        
+
             if (!$is_post_in_the_cats) {
                 return $post;
-            }else {
+            } else {
                 $subscribers = $this->get_all_emails();
             }
-            
+
             if (empty($subscribers)) {
                 return $post;
             }
@@ -643,34 +643,22 @@ class BreakingNewsMail_Controller {
         $subject = html_entity_decode($subject, ENT_QUOTES);
         $subject = apply_filters('bnm_email_subject', $subject);
 
-        // Construct BCC headers for sending or send individual emails
-      
         natcasesort($recipients);
-     //   echo "aaa";
-     //   if (function_exists('wpmq_mail') ) {
-            // BCCLimit is 1 so send individual emails or we only have 1 recipient
-            //  echo "status: $status <br>";
-            foreach ($recipients as $recipient) {
-                $recipient = trim($recipient);
-                // sanity check -- make sure we have a valid email
-                if (!is_email($recipient) || empty($recipient)) {
-                    continue;
-                }
-                $mailtext_to_send = $this->construct_unsubscribe_link($recipient, $mailtext);
-                //   echo $recipient. "- ".$mailtext_to_send ."<br>";
-                // Use the mail queue provided we are not sending a preview
-                if (function_exists('wpmq_mail') && !$this->preview_email) {
-                    $status = wp_mail($recipient, $subject, $mailtext_to_send, $headers, '', 0);
-                } else {
-                    $status = wp_mail($recipient, $subject, $mailtext_to_send, $headers);
-                }
-             //   echo "status: $status <br>";
+        foreach ($recipients as $recipient) {
+            $recipient = trim($recipient);
+            // sanity check -- make sure we have a valid email
+            if (!is_email($recipient) || empty($recipient)) {
+                continue;
             }
-         //   return true;
-          
-        
-       
-          //  continue;
+            $mailtext_to_send = $this->construct_unsubscribe_link($recipient, $mailtext);
+            //   echo $recipient. "- ".$mailtext_to_send ."<br>";
+            // Use the mail queue provided we are not sending a preview
+            if (function_exists('wpmq_mail') && !$this->preview_email) {
+                $status = wp_mail($recipient, $subject, $mailtext_to_send, $headers, '', 0);
+            } else {
+                $status = wp_mail($recipient, $subject, $mailtext_to_send, $headers);
+            }
+        }
         return $status;
     }
 
@@ -926,7 +914,7 @@ class BreakingNewsMail_Controller {
                 $all_cats = array_merge($all_cats, get_categories(array('hide_empty' => false, 'orderby' => $orderby, 'taxonomy' => $taxonomy)));
             }
         }
-        if ($include === true) {          
+        if ($include === true) {
             $included = explode(',', $this->bnm_options['include']);
 
             // need to use $id like this as this is a mixed array / object
@@ -1221,12 +1209,12 @@ class BreakingNewsMail_Controller {
      */
 
     function bnm_load_jquery() {
-        wp_enqueue_script('jquery');        
-        wp_enqueue_script('jquery-form');                     
+        wp_enqueue_script('jquery');
+        wp_enqueue_script('jquery-form');
         wp_enqueue_script('jquery-validate', plugin_dir_url(__FILE__) . '../js/jquery.validate.js');
         wp_enqueue_script('jquery-validate-spanish', plugin_dir_url(__FILE__) . '../js/messages_es.js');
-        wp_enqueue_script('bnm_ajax', plugin_dir_url(__FILE__) . '../js/bnm_subscription_ajax.js');      
-        
+        wp_enqueue_script('bnm_ajax', plugin_dir_url(__FILE__) . '../js/bnm_subscription_ajax.js');
+
         // Get current page protocol
         $protocol = isset($_SERVER["HTTPS"]) ? 'https://' : 'http://';
         // Output admin-ajax.php URL with same protocol as current page
@@ -1235,18 +1223,20 @@ class BreakingNewsMail_Controller {
         );
         wp_localize_script('bnm_ajax', 'bnm_ajax', $params);
     }
-    
-     /*
+
+    /*
      * Adds the slyle for the feedback messages on the widget
      * @since 1
      *            
      */
-    function add_css_bnm(){
+
+    function add_css_bnm() {
         ?> 
         <style>
-              label.error { float: none; color: red; padding-left: .5em; vertical-align: top; display:inline-block;}
+            label.error { float: none; color: red; padding-left: .5em; vertical-align: top; display:inline-block;}
         </style>
-      <?php
+        <?php
+
     }
 
     /*
@@ -1262,5 +1252,4 @@ class BreakingNewsMail_Controller {
     }
 
 }
-
 ?>
