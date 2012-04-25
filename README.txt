@@ -15,9 +15,9 @@ The format of the email can also be customised and you can generate emails for e
 * plaintext excerpt
 * HTML excerpt 
 
-You can edit the email templates.
+You can edit the email templates. The messages in the public form for subscriptions are being shown with ajax
 
-The messages in the public form for subscriptions are being shown with ajax
+Based on Subscribe2: http://subscribe2.wordpress.com/ from Matthew Robinson
 
 == Installation ==
 1. Log in to your WordPress blog and visit Plugins->Add New.
