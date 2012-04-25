@@ -36,6 +36,7 @@ if (version_compare($GLOBALS['wp_version'], '3.1', '<')) {
 global $wpdb;
 
 define('BNM_USERS', $wpdb->get_blog_prefix() . 'bnm_users');
+define( 'BNM_PATH', trailingslashit(dirname(__FILE__)) );
 
 require_once 'includes/BreakingNewsMail_Widget.php';
 require_once 'includes/BreakingNewsMail_Admin.php';
@@ -129,9 +130,9 @@ class WP_Breaking_News_Mail_Main {
             $this->bnm_options['bnmpage'] = 0;
         } // option for default WordPress page for bnm to use        
 
-        if (empty($this->bnm_options['exclude'])) {
-            $this->bnm_options['exclude'] = "";
-        } // option for excluded categories
+        if (empty($this->bnm_options['include'])) {
+            $this->bnm_options['include'] = "";
+        } // option for included categories
 
         if (empty($this->bnm_options['sender_email'])) {
             $this->bnm_options['sender_email'] = "author@email.com";
@@ -154,7 +155,7 @@ class WP_Breaking_News_Mail_Main {
         } // Default notification email text
 
         if (empty($this->bnm_options['notification_subject'])) {
-            $this->bnm_options['notification_subject'] = "[{BLOGNAME}] TITLE";
+            $this->bnm_options['notification_subject'] = "[{BLOGNAME}] {TITLE}";
         } // Default notification email subject
 
         if (empty($this->bnm_options['confirm_email'])) {

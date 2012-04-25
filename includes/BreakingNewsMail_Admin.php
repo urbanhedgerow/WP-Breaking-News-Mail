@@ -53,7 +53,7 @@ class BreakingNewsMail_Admin {
                 <h3>General settings</h3>
         <?php do_settings_sections('bnm_settings'); ?>
                 <br /><br />
-                <?php $this->display_category_form(explode(',', $this->bnm_options['exclude'])); ?>
+                <?php $this->display_category_form(explode(',', $this->bnm_options['include'])); ?>
                 <br /><br />
                 Add Tracking Parameters to the Permalink:
                 <input type="text" name="tracking" value="<?php echo stripslashes($this->bnm_options['tracking']) ?>" size="50" />
@@ -351,7 +351,7 @@ class BreakingNewsMail_Admin {
         $i = 0;
         $j = 0;
         ?>
-        <label><strong>Check the categories you want to exclude from the breaking news email alerts</strong></label>
+        <label><strong>Check the categories you want to include from the breaking news email alerts</strong></label>
         <table width="30%" cellspacing="2" cellpadding="5" class="editform">
             <tr><td align="left" colspan="2">
                     <label><input type="checkbox" name="checkall" value="checkall_cat" /> Select / Unselect All</label>

@@ -493,21 +493,21 @@ class BreakingNewsMail_Controller {
                 return $post;
             }
             $post_cats = wp_get_post_categories($post->ID);
-            $check = false;
-            // is the current post assigned to any categories
-            // which should not generate a notification email?
-            foreach (explode(',', $this->bnm_options['exclude']) as $cat) {
-                if (in_array($cat, $post_cats)) {
-                    $check = true;
+            $is_post_in_the_cats = true;           
+            
+            
+            foreach (explode(',', $this->bnm_options['include']) as $cat) {                         
+                if (!in_array($cat,$post_cats)) {
+                    $is_post_in_the_cats = false;                    
                 }
             }
-            if ($check) {
+                        
+            if (!$is_post_in_the_cats) {
                 return $post;
-            }
-            // lets collect our subscribers
-            if (!$check) {
+            }else {
                 $subscribers = $this->get_all_emails();
             }
+            
             if (empty($subscribers)) {
                 return $post;
             }
@@ -646,8 +646,10 @@ class BreakingNewsMail_Controller {
         // Construct BCC headers for sending or send individual emails
       
         natcasesort($recipients);
-        if (function_exists('wpmq_mail') || $this->bnm_options['bcclimit'] == 1 || count($recipients) == 1) {
+     //   echo "aaa";
+     //   if (function_exists('wpmq_mail') ) {
             // BCCLimit is 1 so send individual emails or we only have 1 recipient
+            //  echo "status: $status <br>";
             foreach ($recipients as $recipient) {
                 $recipient = trim($recipient);
                 // sanity check -- make sure we have a valid email
@@ -658,13 +660,17 @@ class BreakingNewsMail_Controller {
                 //   echo $recipient. "- ".$mailtext_to_send ."<br>";
                 // Use the mail queue provided we are not sending a preview
                 if (function_exists('wpmq_mail') && !$this->preview_email) {
-                    $status = @wp_mail($recipient, $subject, $mailtext_to_send, $headers, '', 0);
+                    $status = wp_mail($recipient, $subject, $mailtext_to_send, $headers, '', 0);
                 } else {
-                    $status = @wp_mail($recipient, $subject, $mailtext_to_send, $headers);
+                    $status = wp_mail($recipient, $subject, $mailtext_to_send, $headers);
                 }
+             //   echo "status: $status <br>";
             }
-            return true;
-        }  
+         //   return true;
+          
+        
+       
+          //  continue;
         return $status;
     }
 
@@ -705,11 +711,11 @@ class BreakingNewsMail_Controller {
         if (!empty($_POST['confirm_email'])) {
             $this->bnm_options['confirm_email'] = $_POST['confirm_email'];
         }
-        $exclude_cats = '';
+        $include_cats = '';
         if (!empty($_POST['category'])) {
             sort($_POST['category']);
-            $exclude_cats = implode(',', $_POST['category']);
-            $this->bnm_options['exclude'] = $exclude_cats;
+            $include_cats = implode(',', $_POST['category']);
+            $this->bnm_options['include'] = $include_cats;
         }
 
         if (!empty($_POST['email_format'])) {
@@ -906,12 +912,12 @@ class BreakingNewsMail_Controller {
      * Get an object of all categories, include default and custom type
      * @since 1
      *
-     * @param    boolean   $exclude excluded categories
+     * @param    boolean   $include included categories
      * @param    orderby   $orderby criteria for order the cats
      * @return   string  $option string which contains all the options to be shown
      */
 
-    function all_cats($exclude = false, $orderby = 'slug') {
+    function all_cats($include = false, $orderby = 'slug') {
         $all_cats = array();
         $bnm_taxonomies = array('category');
         $bnm_taxonomies = apply_filters('bnm_taxonomies', $bnm_taxonomies);
@@ -920,14 +926,13 @@ class BreakingNewsMail_Controller {
                 $all_cats = array_merge($all_cats, get_categories(array('hide_empty' => false, 'orderby' => $orderby, 'taxonomy' => $taxonomy)));
             }
         }
-        if ($exclude === true) {
-            // remove excluded categories from the returned object
-            $excluded = explode(',', $this->bnm_options['exclude']);
+        if ($include === true) {          
+            $included = explode(',', $this->bnm_options['include']);
 
             // need to use $id like this as this is a mixed array / object
             $id = 0;
             foreach ($all_cats as $cat) {
-                if (in_array($cat->term_id, $excluded)) {
+                if (!in_array($cat->term_id, $included)) {
                     unset($all_cats[$id]);
                 }
                 $id++;
