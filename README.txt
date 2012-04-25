@@ -24,10 +24,9 @@ If you have any issue, you can tell me about it through this link: https://githu
 == Installation ==
 1. Log in to your WordPress blog and visit Plugins->Add New.
 2. Search for Breaking News Mail, click "Install Now" and then Activate the Plugin
-3. Click the "Settings" admin menu link, and select "Breaking Settings".
-4. Configure the options to taste, including the email template and any categories which should be excluded from notification
-5. Create a [WordPress Page](http://codex.wordpress.org/Pages) to display the confirmation messages.  When creating the page, manually insert the shortcode or token: [BNM_CONFIRMATION_MESSAGE] 
-This token will automatically be replaced and will display the confirmation messages as necessary.
+3. Click the "Breaking Settings" admin menu link.
+4. Configure the options to taste, including the email template and any categories which should be included in the email alert.
+5. Create a WordPress Page to display the feedback after the subscription/unsubscription email confirmation. When creating the page, manually insert the shortcode: [BNM_CONFIRMATION_MESSAGE] This token will automatically be replaced and will display the confirmation messages as necessary.
 6. In the WordPress "Settings" area for Breaking News Email select the page name in the "Appearance" section that of the WordPress page created in step 5.
 
 == Screenshots ==
