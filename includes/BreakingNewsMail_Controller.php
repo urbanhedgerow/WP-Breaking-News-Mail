@@ -72,7 +72,8 @@ class BreakingNewsMail_Controller {
             }
         } else {
             add_action('wp_enqueue_scripts', array(&$this, 'bnm_load_jquery'));
-            //  add_action('wp_head', array(&$this, 'add_bnm_ajax'));
+            add_action('wp_head', array(&$this, 'add_css_bnm'));
+         
             if (isset($_GET['bnm'])) {
                 //   echo "someone is confirming a request";
                 if (defined('DOING_BNM_CONFIRM') && DOING_BNM_CONFIRM) {
@@ -643,7 +644,7 @@ class BreakingNewsMail_Controller {
         $subject = apply_filters('bnm_email_subject', $subject);
 
         // Construct BCC headers for sending or send individual emails
-        $bcc = '';
+      
         natcasesort($recipients);
         if (function_exists('wpmq_mail') || $this->bnm_options['bcclimit'] == 1 || count($recipients) == 1) {
             // BCCLimit is 1 so send individual emails or we only have 1 recipient
@@ -657,74 +658,13 @@ class BreakingNewsMail_Controller {
                 //   echo $recipient. "- ".$mailtext_to_send ."<br>";
                 // Use the mail queue provided we are not sending a preview
                 if (function_exists('wpmq_mail') && !$this->preview_email) {
-                    @wp_mail($recipient, $subject, $mailtext_to_send, $headers, '', 0);
+                    $status = @wp_mail($recipient, $subject, $mailtext_to_send, $headers, '', 0);
                 } else {
-                    @wp_mail($recipient, $subject, $mailtext_to_send, $headers);
+                    $status = @wp_mail($recipient, $subject, $mailtext_to_send, $headers);
                 }
             }
             return true;
-        } /* elseif ($this->bnm_options['bcclimit'] == 0) {
-          // we're not using BCCLimit
-          foreach ($recipients as $recipient) {
-          $recipient = trim($recipient);
-          // sanity check -- make sure we have a valid email
-          if (!is_email($recipient)) {
-          continue;
-          }
-
-          $mailtext = $this->construct_unsubscribe_link($recipient, $mailtext);
-
-          // and NOT the sender's email, since they'll get a copy anyway
-          if (!empty($recipient) && $this->sender_email != $recipient) {
-          ($bcc == '') ? $bcc = "Bcc: $recipient" : $bcc .= ", $recipient";
-          // Bcc Headers now constructed by phpmailer class
-          }
-          }
-
-          $headers .= "$bcc\n";
-
-          } else {
-          // we're using BCCLimit
-          $count = 1;
-          $batch = array();
-          foreach ($recipients as $recipient) {
-          $recipient = trim($recipient);
-          // sanity check -- make sure we have a valid email
-          if (!is_email($recipient)) {
-          continue;
-          }
-
-          $mailtext = $this->construct_unsubscribe_link($recipient, $mailtext);
-          // and NOT the sender's email, since they'll get a copy anyway
-          if (!empty($recipient) && $this->sender_email != $recipient) {
-          ('' == $bcc) ? $bcc = "Bcc: $recipient" : $bcc .= ", $recipient";
-          // Bcc Headers now constructed by phpmailer class
-          }
-          if ($this->bnm_options['bcclimit'] == $count) {
-          $count = 0;
-          $batch[] = $bcc;
-          $bcc = '';
-          }
-          $count++;
-          }
-          // add any partially completed batches to our batch array
-          if ($bcc != "") {
-          $batch[] = $bcc;
-          }
-          } */
-        // rewind the array, just to be safe
-
-        reset($recipients);
-        // actually send mail
-        /*   if (isset($batch) && !empty($batch)) {
-          foreach ($batch as $bcc) {
-          $newheaders = $headers . "$bcc\n";
-          // $status = @wp_mail($this->sender_email, $subject, $mailtext, $newheaders);
-          }
-          } elseif ($this->bnm_options['bcclimit'] != 1 && count($recipients) != 1) {
-          //$status = @wp_mail($this->sender_email, $subject, $mailtext, $headers);
-          } */
-        $status = true;
+        }  
         return $status;
     }
 
@@ -753,10 +693,6 @@ class BreakingNewsMail_Controller {
             if (is_numeric($_POST['page']) && $_POST['page'] >= 0) {
                 $this->bnm_options['bnmpage'] = $_POST['page'];
             }
-        }
-
-        if (!empty($_POST['bbclimit'])) {
-            $this->bnm_options['bcclimit'] = $_POST['bbclimit'];
         }
 
         if (!empty($_POST['mailtext'])) {
@@ -1281,11 +1217,11 @@ class BreakingNewsMail_Controller {
 
     function bnm_load_jquery() {
         wp_enqueue_script('jquery');        
-        wp_enqueue_script('jquery-form');                
-        //wp_enqueue_script('jquery-form', plugin_dir_url(__FILE__) . '../js/jquery.form.js');
+        wp_enqueue_script('jquery-form');                     
         wp_enqueue_script('jquery-validate', plugin_dir_url(__FILE__) . '../js/jquery.validate.js');
         wp_enqueue_script('jquery-validate-spanish', plugin_dir_url(__FILE__) . '../js/messages_es.js');
-        wp_enqueue_script('bnm_ajax', plugin_dir_url(__FILE__) . '../js/bnm_subscription_ajax.js');
+        wp_enqueue_script('bnm_ajax', plugin_dir_url(__FILE__) . '../js/bnm_subscription_ajax.js');      
+        
         // Get current page protocol
         $protocol = isset($_SERVER["HTTPS"]) ? 'https://' : 'http://';
         // Output admin-ajax.php URL with same protocol as current page
@@ -1293,6 +1229,19 @@ class BreakingNewsMail_Controller {
             'ajaxurl' => admin_url('admin-ajax.php', $protocol)
         );
         wp_localize_script('bnm_ajax', 'bnm_ajax', $params);
+    }
+    
+     /*
+     * Adds the slyle for the feedback messages on the widget
+     * @since 1
+     *            
+     */
+    function add_css_bnm(){
+        ?> 
+        <style>
+              label.error { float: none; color: red; padding-left: .5em; vertical-align: top; display:inline-block;}
+        </style>
+      <?php
     }
 
     /*

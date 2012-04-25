@@ -51,10 +51,7 @@ class WP_Breaking_News_Mail_Main {
     public function __construct() {
         // Call Wpsqt_Installer Class to write in WPSQT tables on activation 
         register_activation_hook(__FILE__, array(&$this, 'bnm_main_install'));
-        
-        //ver donde llamo esto que no me de error
-        //register_uninstall_hook(__FILE__, array(&$this,'bnm_unistall'));
-        
+                
         $this->objBreakingNewsMail_Controller = $objBreakingNewsMail_Controller = new BreakingNewsMail_Controller();
         if (is_admin()) {
             if (is_multisite()) {
@@ -106,25 +103,9 @@ class WP_Breaking_News_Mail_Main {
                         status tinyint(1) default 1,
 			date DATE default '" . date('Y-m-d') . "' NOT NULL,
 			ip char(64) NOT NULL default 'admin',
-			PRIMARY KEY (id) )  ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;");
+			PRIMARY KEY (id) )  ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;");     
     }
-
-     /*
-     * Drop the database table and delete the option
-     * @since 1
-     *     
-     */
-    function bnm_unistall() {
-        global $wpdb;
-        //delete any options, tables, etc the plugin created
-        delete_option('bnm_options');
-        $rawTables = $wpdb->get_results("SHOW TABLES LIKE  '" . $wpdb->get_blog_prefix() . "bnm_%'", ARRAY_N);
-        $tables = array();
-        foreach ($rawTables as $table) {
-            $tables[] = $table[0];
-        }
-        $wpdb->query("DROP TABLE " . implode(",", $tables));
-    }
+   
 
     /*
      * Set the default options values
@@ -139,10 +120,6 @@ class WP_Breaking_News_Mail_Main {
         if (empty($this->bnm_options['email_format'])) {
             $this->bnm_options['email_format'] = "text";
         } // option for default auto-subscription email format
-
-        if (empty($this->bnm_options['bcclimit'])) {
-            $this->bnm_options['bcclimit'] = 1;
-        } // option for default bcc limit on email notifications
 
         if (empty($this->bnm_options['tracking'])) {
             $this->bnm_options['tracking'] = "";

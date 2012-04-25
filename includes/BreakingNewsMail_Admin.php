@@ -63,12 +63,7 @@ class BreakingNewsMail_Admin {
                 <br /><br />
                 sender_email email:
                 <input type="text" name="sender_email" value="<?php echo stripslashes($this->bnm_options['sender_email']) ?>" size="50" />
-                <br /><br />
-                Restrict the number of recipients per email to (0 for unlimited)
-                 <span id="bnmbcc_1">
-                     <input type="text" name="bbclimit" value="<?php echo $this->bnm_options['bcclimit'] ?>" />
-                 </span>
-                 <br /><br />
+                <br /><br />                
                  Email excerpt format:
                 <label>
                     <input type="radio" name="email_format" value="html"<?php checked($this->bnm_options['email_format'], 'html', true) ?> />
