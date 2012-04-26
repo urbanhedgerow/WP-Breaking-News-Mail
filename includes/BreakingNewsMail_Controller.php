@@ -738,7 +738,7 @@ class BreakingNewsMail_Controller {
                 $sub_error = "$email";
             } else {
                 $message = $this->add_subscriptor($email, $_POST["ip"]);
-                echo "<div id=\"message\" class=\"updated fade\"><p><strong>" . _('Address(es) subscribed' . $message, 'bnm') . "</strong></p></div>";
+                echo "<div id=\"message\" class=\"updated fade\"><p><strong>" . _('Address(es) subscribed %d ',$message , 'bnm') . "</strong></p></div>";
                 
             }
         } elseif (!$email) {
