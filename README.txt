@@ -15,6 +15,8 @@ The format of the email can also be customised and you can generate emails for e
 * plaintext excerpt
 * HTML excerpt 
 
+*Important note:* The email alert will be sent only when you publish a post, not on updates. I recommend you create a single category destinated to this email alerts and check it in the plugin settings page, this way, when a breaking new occur you can check this category the email will be sent to your subscribers.
+
 You can edit the email templates. The messages in the public form for subscriptions are being shown with ajax
 
 Based on Subscribe2: http://subscribe2.wordpress.com/ from Matthew Robinson

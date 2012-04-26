@@ -3,7 +3,7 @@
   Plugin Name: WP Breaking News Mail
   Plugin URI: https://github.com/DanielaValero/WP-Breaking-News-Mail
   Description: Notifies an email list when a Breaking News occur. Based on Subscribe2: http://subscribe2.wordpress.com/ from Matthew Robinson
-  Version: 1
+  Version: 1.01
   Author: Daniela Valero aka DaHe
   Author URI: http://twitter.com/danielavalero_
  * License: GPLv2

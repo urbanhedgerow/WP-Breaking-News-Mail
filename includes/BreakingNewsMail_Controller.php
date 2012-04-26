@@ -174,7 +174,7 @@ class BreakingNewsMail_Controller {
     function title_filter($title) {
         // don't interfere if we've already done our thing
         if (in_the_loop()) {
-            return  __('Subscription Confirmation', 'bnm');            
+            return __('Subscription Confirmation', 'bnm');
         } else {
             return $title;
         }
@@ -481,134 +481,136 @@ class BreakingNewsMail_Controller {
      */
 
     function send_breaking_new_email_alert($post = 0, $preview = '') {
-        if (!$post) {
-            return $post;
-        }
-        $post = get_post($post);
-
-        if ($preview == '') {
-            // we aren't sending a Preview to the current user so carry out checks
-            $bnmmail = get_post_meta($post->ID, 'bnmmail', true);
-            if ((isset($_POST['bnm_meta_field']) && $_POST['bnm_meta_field'] == 'no') || strtolower(trim($bnmmail)) == 'no') {
+        if (( $_POST['post_status'] == 'publish' ) && ( $_POST['original_post_status'] != 'publish' )) {
+            if (!$post) {
                 return $post;
             }
-            $post_cats = wp_get_post_categories($post->ID);
-            $is_post_in_the_cats = true;
+            $post = get_post($post);
 
-
-            foreach (explode(',', $this->bnm_options['include']) as $cat) {
-                if (!in_array($cat, $post_cats)) {
-                    $is_post_in_the_cats = false;
+            if ($preview == '') {
+                // we aren't sending a Preview to the current user so carry out checks
+                $bnmmail = get_post_meta($post->ID, 'bnmmail', true);
+                if ((isset($_POST['bnm_meta_field']) && $_POST['bnm_meta_field'] == 'no') || strtolower(trim($bnmmail)) == 'no') {
+                    return $post;
                 }
-            }
+                $post_cats = wp_get_post_categories($post->ID);
+                $is_post_in_the_cats = true;
 
-            if (!$is_post_in_the_cats) {
-                return $post;
-            } else {
-                $subscribers = $this->get_all_emails();
-            }
 
-            if (empty($subscribers)) {
-                return $post;
-            }
-        }
-
-        // we set these class variables so that we can avoid
-        // passing them in function calls a little later
-        $this->post_title = "<a href=\"" . get_permalink($post->ID) . "\">" . html_entity_decode($post->post_title, ENT_QUOTES) . "</a>";
-        $this->permalink = get_permalink($post->ID);
-        $this->post_date = get_the_time(get_option('date_format'));
-        $this->post_time = get_the_time();
-
-        $this->sender_email = $this->bnm_options['sender_email'];
-        $this->sender_name = html_entity_decode(get_option('blogname'), ENT_QUOTES);
-
-        // Get email subject
-        $subject = stripslashes(strip_tags($this->substitute_email_tags($this->bnm_options['notification_subject'])));
-        // Get the message template
-        $mailtext = apply_filters('bnm_email_template', $this->bnm_options['mailtext']);
-        $mailtext = stripslashes($this->substitute_email_tags($mailtext));
-
-        $gallid = '[gallery id="' . $post->ID . '"';
-        $content = str_replace('[gallery', $gallid, $post->post_content);
-        $content = apply_filters('the_content', $content);
-        $content = str_replace("]]>", "]]&gt", $content);
-
-        if ($this->bnm_options['email_format'] == "text") {
-            $plaintext = $post->post_content;
-            if (function_exists('strip_shortcodes')) {
-                $plaintext = strip_shortcodes($plaintext);
-            }
-            $plaintext = preg_replace('|<s*>(.*)<\/s>|', '', $plaintext);
-            $plaintext = preg_replace('|<strike*>(.*)<\/strike>|', '', $plaintext);
-            $plaintext = preg_replace('|<del*>(.*)<\/del>|', '', $plaintext);
-
-            $excerpt = $post->post_excerpt;
-            if ($excerpt == "") {
-                // no excerpt, is there a <!--more--> ?
-                if (strpos($plaintext, '<!--more-->') !== false) {
-                    list($excerpt, $more) = explode('<!--more-->', $plaintext, 2);
-                    // strip leading and trailing whitespace
-                    $excerpt = strip_tags($excerpt);
-                    $excerpt = trim($excerpt);
-                } else {
-                    // no <!--more-->, so grab the first 55 words
-                    $excerpt = strip_tags($plaintext);
-                    $words = explode(' ', $excerpt, $this->excerpt_length + 1);
-                    if (count($words) > $this->excerpt_length) {
-                        array_pop($words);
-                        array_push($words, '[...]');
-                        $excerpt = implode(' ', $words);
+                foreach (explode(',', $this->bnm_options['include']) as $cat) {
+                    if (!in_array($cat, $post_cats)) {
+                        $is_post_in_the_cats = false;
                     }
                 }
-            }
 
-            // remove excess white space from with $excerpt and $plaintext
-            $excerpt = preg_replace('|[ ]+|', ' ', $excerpt);
-
-            // prepare mail body texts
-            $excerpt_body = str_replace("{POST}", $excerpt, $mailtext);
-
-            if ($preview != '') {
-                $this->sender_email = $preview;
-                $this->sender_name = 'Plain Text Excerpt Preview';
-                $this->deliver_email(array($preview), $subject, $excerpt_body);
-            } else {
-                $subscribers = apply_filters('bnm_send_plain_excerpt_suscribers', $subscribers, $post->ID);
-                $this->deliver_email($subscribers, $subject, $excerpt_body);
-            }
-        } elseif ($this->bnm_options['email_format'] == "html") {
-            $html_excerpt = $post->post_excerpt;
-            if ($html_excerpt == "") {
-                // no excerpt, is there a <!--more--> ?
-                if (strpos($content, '<!--more-->') !== false) {
-                    list($html_excerpt, $more) = explode('<!--more-->', $content, 2);
-                    // balance HTML tags and then strip leading and trailing whitespace
-                    $html_excerpt = trim(balanceTags($html_excerpt, true));
+                if (!$is_post_in_the_cats) {
+                    return $post;
                 } else {
-                    // no <!--more-->, so grab the first 55 words
-                    $words = explode(' ', $content, $this->excerpt_length + 1);
-                    if (count($words) > $this->excerpt_length) {
-                        array_pop($words);
-                        array_push($words, '[...]');
-                        $html_excerpt = implode(' ', $words);
+                    $subscribers = $this->get_all_emails();
+                }
+
+                if (empty($subscribers)) {
+                    return $post;
+                }
+            }
+
+            // we set these class variables so that we can avoid
+            // passing them in function calls a little later
+            $this->post_title = "<a href=\"" . get_permalink($post->ID) . "\">" . html_entity_decode($post->post_title, ENT_QUOTES) . "</a>";
+            $this->permalink = get_permalink($post->ID);
+            $this->post_date = get_the_time(get_option('date_format'));
+            $this->post_time = get_the_time();
+
+            $this->sender_email = $this->bnm_options['sender_email'];
+            $this->sender_name = html_entity_decode(get_option('blogname'), ENT_QUOTES);
+
+            // Get email subject
+            $subject = stripslashes(strip_tags($this->substitute_email_tags($this->bnm_options['notification_subject'])));
+            // Get the message template
+            $mailtext = apply_filters('bnm_email_template', $this->bnm_options['mailtext']);
+            $mailtext = stripslashes($this->substitute_email_tags($mailtext));
+
+            $gallid = '[gallery id="' . $post->ID . '"';
+            $content = str_replace('[gallery', $gallid, $post->post_content);
+            $content = apply_filters('the_content', $content);
+            $content = str_replace("]]>", "]]&gt", $content);
+
+            if ($this->bnm_options['email_format'] == "text") {
+                $plaintext = $post->post_content;
+                if (function_exists('strip_shortcodes')) {
+                    $plaintext = strip_shortcodes($plaintext);
+                }
+                $plaintext = preg_replace('|<s*>(.*)<\/s>|', '', $plaintext);
+                $plaintext = preg_replace('|<strike*>(.*)<\/strike>|', '', $plaintext);
+                $plaintext = preg_replace('|<del*>(.*)<\/del>|', '', $plaintext);
+
+                $excerpt = $post->post_excerpt;
+                if ($excerpt == "") {
+                    // no excerpt, is there a <!--more--> ?
+                    if (strpos($plaintext, '<!--more-->') !== false) {
+                        list($excerpt, $more) = explode('<!--more-->', $plaintext, 2);
+                        // strip leading and trailing whitespace
+                        $excerpt = strip_tags($excerpt);
+                        $excerpt = trim($excerpt);
+                    } else {
+                        // no <!--more-->, so grab the first 55 words
+                        $excerpt = strip_tags($plaintext);
+                        $words = explode(' ', $excerpt, $this->excerpt_length + 1);
+                        if (count($words) > $this->excerpt_length) {
+                            array_pop($words);
+                            array_push($words, '[...]');
+                            $excerpt = implode(' ', $words);
+                        }
+                    }
+                }
+
+                // remove excess white space from with $excerpt and $plaintext
+                $excerpt = preg_replace('|[ ]+|', ' ', $excerpt);
+
+                // prepare mail body texts
+                $excerpt_body = str_replace("{POST}", $excerpt, $mailtext);
+
+                if ($preview != '') {
+                    $this->sender_email = $preview;
+                    $this->sender_name = 'Plain Text Excerpt Preview';
+                    $this->deliver_email(array($preview), $subject, $excerpt_body);
+                } else {
+                    $subscribers = apply_filters('bnm_send_plain_excerpt_suscribers', $subscribers, $post->ID);
+                    $this->deliver_email($subscribers, $subject, $excerpt_body);
+                }
+            } elseif ($this->bnm_options['email_format'] == "html") {
+                $html_excerpt = $post->post_excerpt;
+                if ($html_excerpt == "") {
+                    // no excerpt, is there a <!--more--> ?
+                    if (strpos($content, '<!--more-->') !== false) {
+                        list($html_excerpt, $more) = explode('<!--more-->', $content, 2);
                         // balance HTML tags and then strip leading and trailing whitespace
                         $html_excerpt = trim(balanceTags($html_excerpt, true));
                     } else {
-                        $html_excerpt = $content;
+                        // no <!--more-->, so grab the first 55 words
+                        $words = explode(' ', $content, $this->excerpt_length + 1);
+                        if (count($words) > $this->excerpt_length) {
+                            array_pop($words);
+                            array_push($words, '[...]');
+                            $html_excerpt = implode(' ', $words);
+                            // balance HTML tags and then strip leading and trailing whitespace
+                            $html_excerpt = trim(balanceTags($html_excerpt, true));
+                        } else {
+                            $html_excerpt = $content;
+                        }
                     }
                 }
-            }
-            $html_excerpt_body = str_replace("\r\n", "<br />\r\n", $mailtext);
-            $html_excerpt_body = str_replace("{POST}", $html_excerpt, $html_excerpt_body);
+                $html_excerpt_body = str_replace("\r\n", "<br />\r\n", $mailtext);
+                $html_excerpt_body = str_replace("{POST}", $html_excerpt, $html_excerpt_body);
 
-            if ($preview != '') {
-                $this->sender_email = $preview;
-                $this->sender_name = 'HTML Excerpt Preview';
-                $this->deliver_email(array($preview), $subject, $html_excerpt_body, 'html');
-            } else {
-                $subscribers = apply_filters('bnm_send_html_excerpt_suscribers', $subscribers, $post->ID);
-                $this->deliver_email($subscribers, $subject, $html_excerpt_body, 'html');
+                if ($preview != '') {
+                    $this->sender_email = $preview;
+                    $this->sender_name = 'HTML Excerpt Preview';
+                    $this->deliver_email(array($preview), $subject, $html_excerpt_body, 'html');
+                } else {
+                    $subscribers = apply_filters('bnm_send_html_excerpt_suscribers', $subscribers, $post->ID);
+                    $this->deliver_email($subscribers, $subject, $html_excerpt_body, 'html');
+                }
             }
         }
     }
@@ -738,14 +740,13 @@ class BreakingNewsMail_Controller {
                 $sub_error = "$email";
             } else {
                 $message = $this->add_subscriptor($email, $_POST["ip"]);
-                echo "<div id=\"message\" class=\"updated fade\"><p><strong>" .  __('Address(es) subscribed %d ',$message , 'bnm') . "</strong></p></div>";
-                
+                echo "<div id=\"message\" class=\"updated fade\"><p><strong>" . __('Address(es) subscribed %d ', $message, 'bnm') . "</strong></p></div>";
             }
         } elseif (!$email) {
             $sub_error_not_email = $_POST['bnm_email'];
         }
         if ($sub_error_not_email != '') {
-            echo "<div id=\"message\" class=\"error\"><p><strong>" .  __('Some emails were not processed, the following are not emails', 'bnm')  . ":<br />$sub_error_not_email</strong></p></div>";
+            echo "<div id=\"message\" class=\"error\"><p><strong>" . __('Some emails were not processed, the following are not emails', 'bnm') . ":<br />$sub_error_not_email</strong></p></div>";
         }
         if ($sub_error != '') {
             echo "<div id=\"message\" class=\"error\"><p><strong>" . __('Some emails were not processed, the following were already subscribed', 'bnm') . ":<br />$sub_error</strong></p></div>";
@@ -780,8 +781,8 @@ class BreakingNewsMail_Controller {
                             continue;
                         }
                         $this->add_subscriptor($email, true);
-                   
-                        $message = "<div id=\"message\" class=\"updated fade\"><p><strong>" .   __('Address(es) subscribed', 'bnm')  . "</strong></p></div>";
+
+                        $message = "<div id=\"message\" class=\"updated fade\"><p><strong>" . __('Address(es) subscribed', 'bnm') . "</strong></p></div>";
                     } elseif (is_email($email) && $_POST['unsubscribe']) {
                         if ($this->is_email_subscribed($email) === false) {
                             ('' == $unsub_error) ? $unsub_error = "$email" : $unsub_error .= ", $email";
@@ -796,13 +797,13 @@ class BreakingNewsMail_Controller {
                 }
 
                 if ($sub_error_not_email != '') {
-                    echo "<div id=\"message\" class=\"error\"><p><strong>" .  __('Some emails were not processed, the following are not emails', 'bnm') . ":<br />$sub_error_not_email</strong></p></div>";
+                    echo "<div id=\"message\" class=\"error\"><p><strong>" . __('Some emails were not processed, the following are not emails', 'bnm') . ":<br />$sub_error_not_email</strong></p></div>";
                 }
                 if ($sub_error != '') {
-                    echo "<div id=\"message\" class=\"error\"><p><strong>" .  __('Some emails were not processed, the following were already subscribed', 'bnm') . ":<br />$sub_error</strong></p></div>";
+                    echo "<div id=\"message\" class=\"error\"><p><strong>" . __('Some emails were not processed, the following were already subscribed', 'bnm') . ":<br />$sub_error</strong></p></div>";
                 }
                 if ($unsub_error != '') {
-                    echo "<div id=\"message\" class=\"error\"><p><strong>" .  __('Some emails were not processed, the following were not in the database', 'bnm') . ":<br />$unsub_error</strong></p></div>";
+                    echo "<div id=\"message\" class=\"error\"><p><strong>" . __('Some emails were not processed, the following were not in the database', 'bnm') . ":<br />$unsub_error</strong></p></div>";
                 }
 
                 echo $message;
@@ -814,8 +815,8 @@ class BreakingNewsMail_Controller {
                     foreach ($_POST['delete'] as $address) {
                         $this->delete_subscriptor($address);
                     }
-                    
-                    echo "<div id=\"message\" class=\"updated fade\"><p><strong>" . __('Email deleted', 'bnm'). "</strong></p></div>";
+
+                    echo "<div id=\"message\" class=\"updated fade\"><p><strong>" . __('Email deleted', 'bnm') . "</strong></p></div>";
                 }
                 if (isset($_POST['confirm']) && $_POST['confirm']) {
                     foreach ($_POST['confirm'] as $address) {
@@ -940,18 +941,18 @@ class BreakingNewsMail_Controller {
      */
 
     function messages_to_show() {
-        $this->confirmation_sent =  __('Confirmation sent', 'bnm') ;
-        $this->already_subscribed =  __('Already subscribed', 'bnm');
+        $this->confirmation_sent = __('Confirmation sent', 'bnm');
+        $this->already_subscribed = __('Already subscribed', 'bnm');
         $this->not_subscribed = __('Not subscribed', 'bnm');
-        $this->not_an_email =  __('That is not an email', 'bnm');
-        $this->error =  __('Error', 'bnm');
-        $this->mail_sent =  __('Email sent', 'bnm');
-        $this->mail_failed =  __('Mail failed', 'bnm');
-        $this->form =  __('Form', 'bnm');
-        $this->no_such_email =  __('El correo que intenta confirmar no existe en nuestra base de datos', 'bnm');
-        $this->added =  __('Su email ha sido confirmado, bienvenido a nuestro Breaking News', 'bnm');
-        $this->deleted =  __('Su correo ha sido eliminado de nuestra lista de Breaking News', 'bnm');
-        $this->subscribe =  __('Subscribe', 'bnm');
+        $this->not_an_email = __('That is not an email', 'bnm');
+        $this->error = __('Error', 'bnm');
+        $this->mail_sent = __('Email sent', 'bnm');
+        $this->mail_failed = __('Mail failed', 'bnm');
+        $this->form = __('Form', 'bnm');
+        $this->no_such_email = __('El correo que intenta confirmar no existe en nuestra base de datos', 'bnm');
+        $this->added = __('Su email ha sido confirmado, bienvenido a nuestro Breaking News', 'bnm');
+        $this->deleted = __('Su correo ha sido eliminado de nuestra lista de Breaking News', 'bnm');
+        $this->subscribe = __('Subscribe', 'bnm');
         $this->unsubscribe = __('Unsubscribe', 'bnm');
         $this->confirm_subject = __('Confirm subject', 'bnm');
         $this->options_saved = __('Options Saved', 'bnm');
