@@ -174,7 +174,7 @@ class BreakingNewsMail_Controller {
     function title_filter($title) {
         // don't interfere if we've already done our thing
         if (in_the_loop()) {
-            return __('Subscription Confirmation', 'bnm');
+            return __('Subscription Confirmation', 'bnm');            
         } else {
             return $title;
         }
@@ -738,16 +738,17 @@ class BreakingNewsMail_Controller {
                 $sub_error = "$email";
             } else {
                 $message = $this->add_subscriptor($email, $_POST["ip"]);
-                echo "<div id=\"message\" class=\"updated fade\"><p><strong>" . 'Address(es) subscribed' . $message . "</strong></p></div>";
+                echo "<div id=\"message\" class=\"updated fade\"><p><strong>" . _('Address(es) subscribed' . $message, 'bnm') . "</strong></p></div>";
+                
             }
         } elseif (!$email) {
             $sub_error_not_email = $_POST['bnm_email'];
         }
         if ($sub_error_not_email != '') {
-            echo "<div id=\"message\" class=\"error\"><p><strong>" . 'Some emails were not processed, the following are not emails' . ":<br />$sub_error_not_email</strong></p></div>";
+            echo "<div id=\"message\" class=\"error\"><p><strong>" . _('Some emails were not processed, the following are not emails', 'bnm')  . ":<br />$sub_error_not_email</strong></p></div>";
         }
         if ($sub_error != '') {
-            echo "<div id=\"message\" class=\"error\"><p><strong>" . 'Some emails were not processed, the following were already subscribed' . ":<br />$sub_error</strong></p></div>";
+            echo "<div id=\"message\" class=\"error\"><p><strong>" ._('Some emails were not processed, the following were already subscribed', 'bnm') . ":<br />$sub_error</strong></p></div>";
         }
     }
 
@@ -779,14 +780,15 @@ class BreakingNewsMail_Controller {
                             continue;
                         }
                         $this->add_subscriptor($email, true);
-                        $message = "<div id=\"message\" class=\"updated fade\"><p><strong>" . 'Address(es) subscribed' . "</strong></p></div>";
+                   
+                        $message = "<div id=\"message\" class=\"updated fade\"><p><strong>" .  _('Address(es) subscribed', 'bnm')  . "</strong></p></div>";
                     } elseif (is_email($email) && $_POST['unsubscribe']) {
                         if ($this->is_email_subscribed($email) === false) {
                             ('' == $unsub_error) ? $unsub_error = "$email" : $unsub_error .= ", $email";
                             continue;
                         }
                         $this->delete_subscriptor($email);
-                        $message = "<div id=\"message\" class=\"updated fade\"><p><strong>" . 'Address(es) unsubscribed' . "</strong></p></div>";
+                        $message = "<div id=\"message\" class=\"updated fade\"><p><strong>" ._('Address(es) unsubscribed', 'bnm') . "</strong></p></div>";
                     } elseif (!is_email($email)) {
                         ($sub_error_not_email == "") ? $sub_error_not_email = "$email" : $sub_error_not_email .= ", $email";
                         continue;
@@ -794,13 +796,13 @@ class BreakingNewsMail_Controller {
                 }
 
                 if ($sub_error_not_email != '') {
-                    echo "<div id=\"message\" class=\"error\"><p><strong>" . 'Some emails were not processed, the following are not emails' . ":<br />$sub_error_not_email</strong></p></div>";
+                    echo "<div id=\"message\" class=\"error\"><p><strong>" . _('Some emails were not processed, the following are not emails', 'bnm') . ":<br />$sub_error_not_email</strong></p></div>";
                 }
                 if ($sub_error != '') {
-                    echo "<div id=\"message\" class=\"error\"><p><strong>" . 'Some emails were not processed, the following were already subscribed' . ":<br />$sub_error</strong></p></div>";
+                    echo "<div id=\"message\" class=\"error\"><p><strong>" . _('Some emails were not processed, the following were already subscribed', 'bnm') . ":<br />$sub_error</strong></p></div>";
                 }
                 if ($unsub_error != '') {
-                    echo "<div id=\"message\" class=\"error\"><p><strong>" . 'Some emails were not processed, the following were not in the database' . ":<br />$unsub_error</strong></p></div>";
+                    echo "<div id=\"message\" class=\"error\"><p><strong>" . _('Some emails were not processed, the following were not in the database', 'bnm') . ":<br />$unsub_error</strong></p></div>";
                 }
 
                 echo $message;
@@ -812,20 +814,21 @@ class BreakingNewsMail_Controller {
                     foreach ($_POST['delete'] as $address) {
                         $this->delete_subscriptor($address);
                     }
-                    echo "<div id=\"message\" class=\"updated fade\"><p><strong>" . 'Email deleted' . "</strong></p></div>";
+                    
+                    echo "<div id=\"message\" class=\"updated fade\"><p><strong>" ._('Email deleted', 'bnm'). "</strong></p></div>";
                 }
                 if (isset($_POST['confirm']) && $_POST['confirm']) {
                     foreach ($_POST['confirm'] as $address) {
                         $this->toggle_confirm_status(is_email($address));
                     }
-                    $message = "<div id=\"message\" class=\"updated fade\"><p><strong>" . 'Email confirmed' . "</strong></p></div>";
+                    $message = "<div id=\"message\" class=\"updated fade\"><p><strong>" ._('Email confirmed', 'bnm') . "</strong></p></div>";
                 }
 
                 if (isset($_POST['unconfirm']) && $_POST['unconfirm']) {
                     foreach ($_POST['unconfirm'] as $address) {
                         $this->toggle_confirm_status(is_email($address));
                     }
-                    $message = "<div id=\"message\" class=\"updated fade\"><p><strong>" . 'Email unconfirmed' . "</strong></p></div>";
+                    $message = "<div id=\"message\" class=\"updated fade\"><p><strong>" ._('Email unconfirmed', 'bnm') . "</strong></p></div>";
                 }
 
                 echo $message;
@@ -937,22 +940,22 @@ class BreakingNewsMail_Controller {
      */
 
     function messages_to_show() {
-        $this->confirmation_sent = 'Confirmation sent';
-        $this->already_subscribed = 'Already subscribed';
-        $this->not_subscribed = 'Not subscribed';
-        $this->not_an_email = 'That is not an email';
-        $this->error = 'Error';
-        $this->mail_sent = 'Email sent';
-        $this->mail_failed = 'Mail failed';
-        $this->form = 'Form';
-        $this->no_such_email = 'El correo que intenta confirmar no existe en nuestra base de datos';
-        $this->added = 'Su email ha sido confirmado, bienvenido a nuestro Breaking News';
-        $this->deleted = 'Su correo ha sido eliminado de nuestra lista de Breaking News';
-        $this->subscribe = 'Subscribe';
-        $this->unsubscribe = 'Unsubscribe';
-        $this->confirm_subject = 'Confirm subject';
-        $this->options_saved = 'Options Saved';
-        $this->options_reset = 'Options Reset';
+        $this->confirmation_sent = _('Confirmation sent', 'bnm') ;
+        $this->already_subscribed = _('Already subscribed', 'bnm');
+        $this->not_subscribed =_('Not subscribed', 'bnm');
+        $this->not_an_email = _('That is not an email', 'bnm');
+        $this->error = _('Error', 'bnm');
+        $this->mail_sent = _('Email sent', 'bnm');
+        $this->mail_failed = _('Mail failed', 'bnm');
+        $this->form = _('Form', 'bnm');
+        $this->no_such_email = _('El correo que intenta confirmar no existe en nuestra base de datos', 'bnm');
+        $this->added = _('Su email ha sido confirmado, bienvenido a nuestro Breaking News', 'bnm');
+        $this->deleted = _('Su correo ha sido eliminado de nuestra lista de Breaking News', 'bnm');
+        $this->subscribe = _('Subscribe', 'bnm');
+        $this->unsubscribe =_('Unsubscribe', 'bnm');
+        $this->confirm_subject =_('Confirm subject', 'bnm');
+        $this->options_saved =_('Options Saved', 'bnm');
+        $this->options_reset =_('Options Reset', 'bnm');
     }
 
     /*     * ****** Geters ******* */

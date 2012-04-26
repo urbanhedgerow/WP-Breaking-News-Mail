@@ -64,7 +64,7 @@ class BreakingNewsMail_Widget extends WP_Widget {
     //display the widget on the blog
     public function widget($args, $instance) {
         extract($args, EXTR_SKIP);
-        $title = empty($instance['title']) ? _('Breaking news email subscription') : $instance['title'];
+        $title = empty($instance['title']) ? _('Breaking news email subscription','bnm') : $instance['title'];
         $text = empty($instance['text']) ? _('Subscribe yourself') : $instance['text'];        
         echo $before_widget;
         echo $before_title . $title . $after_title;
