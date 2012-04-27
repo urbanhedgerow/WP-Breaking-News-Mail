@@ -44,3 +44,10 @@ If you have any issue, you can tell me about it through this link: https://githu
 
 = 1.0 =
 * This is the first release
+
+1.1
+* The email alerts are sent only on post publish, not on updates
+* Added I18n
+
+1.101
+* Added support for PHP versions > 5.2
