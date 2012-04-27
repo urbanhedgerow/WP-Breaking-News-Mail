@@ -73,9 +73,18 @@ class WP_Breaking_News_Mail_Main {
         } else {
             add_action('wp_ajax_nopriv_bnm_process_subscription', array(&$this, 'bnm_process_subscription'));
         }
-        add_action('widgets_init', function() {
-                    return register_widget('BreakingNewsMail_Widget');
-                });
+        
+        add_action('widgets_init', array (&$this,'init_BreakingNewsMail_Widget'));
+    }
+    
+    
+     /*
+     * Register the widget
+     * @since 1
+     *     
+     */
+    function init_BreakingNewsMail_Widget(){
+        register_widget('BreakingNewsMail_Widget');
     }
 
      /*
