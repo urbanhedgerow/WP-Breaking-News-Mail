@@ -16,7 +16,7 @@ msgstr ""
 msgid "Subscription Confirmation"
 msgstr ""
 
-#: includes/BreakingNewsMail_Controller.php:741
+#: includes/BreakingNewsMail_Controller.php:744
 msgid "Address(es) subscribed %d "
 msgstr ""
 

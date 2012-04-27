@@ -31,9 +31,6 @@ class BreakingNewsMail_Admin {
         add_action("admin_print_scripts-$settings", array(&$this->objController, 'checkbox_form_js'));
         $subscrbers = add_submenu_page('bnm-menu', 'Subscribers', 'Subscribers', 'manage_options', 'bnm_settings', array(&$this, 'bnm_subscribers_page'));
         add_action("admin_print_scripts-$subscrbers", array(&$this->objController, 'checkbox_form_js'));
-
-
-
     }
 
     

@@ -21,16 +21,16 @@ class BreakingNewsMail_Widget extends WP_Widget {
     // display a form for the widget in the admin view to customize the widget’s properties
     
     public function form($instance) {
-        if (isset($instance['text'])) {
-            $text = $instance['text'];
+        if (isset($instance['prev_text'])) {
+            $text = $instance['prev_text'];
         } else {
-            $text = __('Subscribe to our Breaking news email alerts', 'text_domain');
+            $text = __('Subscribe to our Breaking news email alerts', 'bnm');
         }
 
         if (isset($instance['title'])) {
             $title = $instance['title'];
         } else {
-            $title = __('Subscribe', 'text_domain');
+            $title = __('Subscribe', 'bnm');
         }
         ?>
         <p>
@@ -42,10 +42,10 @@ class BreakingNewsMail_Widget extends WP_Widget {
         </p>
 
         <p>
-            <label for="<?php echo $this->get_field_id('text'); ?>"><?php _e('Text to show:'); ?></label> 
+            <label for="<?php echo $this->get_field_id('prev_text'); ?>"><?php _e('Text to show:'); ?></label> 
 
-            <input class="widefat" id="<?php echo $this->get_field_id('text'); ?>" 
-                   name="<?php echo $this->get_field_name('text'); ?>" type="text" 
+            <input class="widefat" id="<?php echo $this->get_field_id('prev_text'); ?>" 
+                   name="<?php echo $this->get_field_name('prev_text'); ?>" type="text" 
                    value="<?php echo esc_attr($text); ?>" />
         </p>
         <?php       
@@ -56,7 +56,7 @@ class BreakingNewsMail_Widget extends WP_Widget {
         $instance = array();
         $instance = $old_instance;
         $instance['title'] = strip_tags($new_instance['title']);
-        $instance['text'] = strip_tags($new_instance['text']);
+        $instance['prev_text'] = strip_tags($new_instance['prev_text']);
         $instance['bnm_email'] = strip_tags($new_instance['bnm_email']);        
         return $instance;
     }
@@ -64,17 +64,18 @@ class BreakingNewsMail_Widget extends WP_Widget {
     //display the widget on the blog
     public function widget($args, $instance) {
         extract($args, EXTR_SKIP);
-        $title = empty($instance['title']) ? _('Breaking news email subscription','bnm') : $instance['title'];
-        $text = empty($instance['text']) ? _('Subscribe yourself') : $instance['text'];        
+        $title = $instance['title'];
+        $prev_text = $instance['prev_text'];        
         echo $before_widget;
         echo $before_title . $title . $after_title;
         ?> 
         <div id='result'></div>
+        <span> <?php echo $prev_text ?></span>
         <form name='bnm_subscribe_form' id='bnm_subscribe_form' method='post' action=''>
-            <?php wp_nonce_field('bnm_nonce'); ?>
-            <h3> <?php $text ?></h3>
+            <?php wp_nonce_field('bnm_nonce'); ?>            
             <input type="email" name='bnm_email' class="required email"  id='bnm_email' value='' required/>
-            <input type="hidden" name="ip" value="<?php echo $_SERVER['REMOTE_ADDR'] ?>" />
+            <input type="hidden" name="ip" id='bnm_ip' value="<?php echo $_SERVER['REMOTE_ADDR'] ?>" />
+            <br>
             <input type='submit' value='Subscribe' name='bnm_subscribe_submit' id='bnm_subscribe_submit' />
         </form>
         <?php

@@ -8,14 +8,14 @@ jQuery(document).ready(function() {
             }
         },  
         submitHandler: function(form) {                          
-            jQuery( '#result').html('loading...'); 
+            jQuery( '#result').html('loading...');          
             jQuery.post(
                 bnm_ajax.ajaxurl, 
                 {
                     'action':'bnm_process_subscription',
-                    '_wpnonce': jQuery('#bnm_subscribe_form :_wpnonce').fieldValue()[0],
-                    'ip': jQuery('#bnm_subscribe_form :ip').fieldValue()[3],
-                    'bnm_email':  jQuery('#bnm_subscribe_form :bnm_email').fieldValue()[2]
+                    '_wpnonce': jQuery(form).find('#_wpnonce').val(),
+                    'ip': jQuery(form).find('#bnm_ip').val(),
+                    'bnm_email': jQuery(form).find('#bnm_email').val()
                 }, 
                 function(response){                       
                     jQuery('#result').html(response);                    

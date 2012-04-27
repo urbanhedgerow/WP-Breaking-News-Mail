@@ -126,17 +126,21 @@ class BreakingNewsMail_Controller {
         } else {
             $result = $wpdb->get_results($wpdb->prepare("INSERT INTO " . BNM_USERS . " (email, active, date, ip) VALUES (%s, %d, NOW(), %s)", $email, 0, $ip));
         }
+        $message ="";
         if ($result !== false) {
             if (!$this->is_email_active($email)) {
                 $this->email = $email;
                 $email_sent = $this->send_confirm();
                 if ($email_sent)
-                    $message = ", a confirmation email will be sent";
-                else
-                    $message = "error sending confirmation";
+                    $message = __(', a confirmation email will be sent', 'bnm');                    
+                else                    
+                    $message = __('error sending confirmation', 'bnm');   
             }
+            return $message;
+        }else{
+            return false;
         }
-        return $message;
+        
     }
 
     /**
@@ -738,9 +742,15 @@ class BreakingNewsMail_Controller {
         if ($email) {
             if ($this->is_email_subscribed($email)) {
                 $sub_error = "$email";
-            } else {
-                $message = $this->add_subscriptor($email, $_POST["ip"]);
-                echo "<div id=\"message\" class=\"updated fade\"><p><strong>" . __('Address(es) subscribed %d ', $message, 'bnm') . "</strong></p></div>";
+            } else {      
+                $message = __('Address(es) subscribed ', 'bnm');     
+                $var= $this->add_subscriptor($email, $_POST["ip"]);                
+                if (gettype($var)=="boolean"){
+                    $message = __('Error saving your email', 'bnm');                         
+                }else{
+                    $message.=$var;                    
+                }   
+                echo "<div id=\"message\" class=\"updated fade\"><p><strong>" .$message . "</strong></p></div>";                             
             }
         } elseif (!$email) {
             $sub_error_not_email = $_POST['bnm_email'];
@@ -772,17 +782,15 @@ class BreakingNewsMail_Controller {
                 $sub_error = '';
                 $sub_error_not_email = "";
                 $unsub_error = '';
-                foreach (preg_split("|[\s,]+|", $_POST['addresses']) as $email) {
-                    // $email = is_email($email);
+                foreach (preg_split("|[\s,]+|", $_POST['addresses']) as $email) {                    
+                    $email = is_email($email);
                     if (is_email($email) && $_POST['subscribe']) {
-
                         if ($this->is_email_subscribed($email) !== false) {
                             ( $sub_error == "") ? $sub_error = "$email" : $sub_error .= ", $email";
                             continue;
                         }
                         $this->add_subscriptor($email, true);
-
-                        $message = "<div id=\"message\" class=\"updated fade\"><p><strong>" . __('Address(es) subscribed', 'bnm') . "</strong></p></div>";
+                        $message = "<div id=\"message\" class=\"updated fade\"><p><strong>" . __('Address(es) subscribed a confirmation message will be sent', 'bnm') . "</strong></p></div>";
                     } elseif (is_email($email) && $_POST['unsubscribe']) {
                         if ($this->is_email_subscribed($email) === false) {
                             ('' == $unsub_error) ? $unsub_error = "$email" : $unsub_error .= ", $email";
@@ -1214,10 +1222,10 @@ class BreakingNewsMail_Controller {
 
     function bnm_load_jquery() {
         wp_enqueue_script('jquery');
-        wp_enqueue_script('jquery-form');
+        wp_enqueue_script('jquery-form-val', plugin_dir_url(__FILE__) . '../js/jquery.form.js','jquery');
         wp_enqueue_script('jquery-validate', plugin_dir_url(__FILE__) . '../js/jquery.validate.js');
-        wp_enqueue_script('jquery-validate-spanish', plugin_dir_url(__FILE__) . '../js/messages_es.js');
-        wp_enqueue_script('bnm_ajax', plugin_dir_url(__FILE__) . '../js/bnm_subscription_ajax.js');
+        wp_enqueue_script('jquery-validate-spanish', plugin_dir_url(__FILE__) . '../js/messages_es.js','jquery-validate');
+        wp_enqueue_script('bnm_ajax', plugin_dir_url(__FILE__) . '../js/bnm_subscription_ajax.js','jquery-form-val');
 
         // Get current page protocol
         $protocol = isset($_SERVER["HTTPS"]) ? 'https://' : 'http://';

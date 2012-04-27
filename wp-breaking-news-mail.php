@@ -1,9 +1,10 @@
 <?php
+
 /*
   Plugin Name: WP Breaking News Mail
   Plugin URI: https://github.com/DanielaValero/WP-Breaking-News-Mail
   Description: Notifies an email list when a Breaking News occur. Based on Subscribe2: http://subscribe2.wordpress.com/ from Matthew Robinson
-  Version: 1.01
+  Version: 1.03
   Author: Daniela Valero aka DaHe
   Author URI: http://twitter.com/danielavalero_
  * License: GPLv2
@@ -36,7 +37,7 @@ if (version_compare($GLOBALS['wp_version'], '3.1', '<')) {
 global $wpdb;
 
 define('BNM_USERS', $wpdb->get_blog_prefix() . 'bnm_users');
-define( 'BNM_PATH', trailingslashit(dirname(__FILE__)) );
+define('BNM_PATH', trailingslashit(dirname(__FILE__)));
 
 require_once 'includes/BreakingNewsMail_Widget.php';
 require_once 'includes/BreakingNewsMail_Admin.php';
@@ -49,10 +50,13 @@ class WP_Breaking_News_Mail_Main {
     private $bnm_options = array();
     private $objBreakingNewsMail_Controller;
 
+   
+
     public function __construct() {
+      //  add_action('init', 'WP_Breaking_News_Mail_Main_init');
         // Call Wpsqt_Installer Class to write in WPSQT tables on activation 
-        register_activation_hook(__FILE__, array(&$this, 'bnm_main_install'));
-                
+        register_activation_hook(__FILE__, array(&$this, 'bnm_main_install'));       
+
         $this->objBreakingNewsMail_Controller = $objBreakingNewsMail_Controller = new BreakingNewsMail_Controller();
         if (is_admin()) {
             if (is_multisite()) {
@@ -73,25 +77,31 @@ class WP_Breaking_News_Mail_Main {
         } else {
             add_action('wp_ajax_nopriv_bnm_process_subscription', array(&$this, 'bnm_process_subscription'));
         }
-        
-        add_action('widgets_init', array (&$this,'init_BreakingNewsMail_Widget'));
+
+        add_action('widgets_init', array(&$this, 'init_BreakingNewsMail_Widget'));
     }
+
     
-    
-     /*
+     function WP_Breaking_News_Mail_Main_init() {
+        $plugin_dir = basename(dirname(__FILE__));
+        load_plugin_textdomain('bnm', false, $plugin_dir);
+    }
+    /*
      * Register the widget
      * @since 1
      *     
      */
-    function init_BreakingNewsMail_Widget(){
+
+    function init_BreakingNewsMail_Widget() {
         register_widget('BreakingNewsMail_Widget');
     }
 
-     /*
+    /*
      * This function is called by ajax on publich subscriptions
      * @since 1
      *     
      */
+
     function bnm_process_subscription() {
         if (!check_ajax_referer('bnm_nonce'))
             exit();
@@ -104,6 +114,7 @@ class WP_Breaking_News_Mail_Main {
      * @since 1
      *   
      */
+
     function bnm_main_install() {
         global $wpdb;
         $wpdb->query("CREATE TABLE IF NOT EXISTS `" . BNM_USERS . "` (
@@ -113,15 +124,15 @@ class WP_Breaking_News_Mail_Main {
                         status tinyint(1) default 1,
 			date DATE default '" . date('Y-m-d') . "' NOT NULL,
 			ip char(64) NOT NULL default 'admin',
-			PRIMARY KEY (id) )  ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;");     
+			PRIMARY KEY (id) )  ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;");
     }
-   
 
     /*
      * Set the default options values
      * @since 1
      *    
      */
+
     function setDefaultOptions() {
         if (empty($this->bnm_options['wpregdef'])) {
             $this->bnm_options['wpregdef'] = "no";
@@ -190,9 +201,11 @@ class WP_Breaking_News_Mail_Main {
      * @since 1
      *     
      */
+
     function setOptions($bnm_options) {
         update_option('bnm_options', $bnm_options);
     }
 
 }
+
 ?>
