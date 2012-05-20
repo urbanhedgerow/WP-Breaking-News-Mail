@@ -957,9 +957,9 @@ class BreakingNewsMail_Controller {
         $this->mail_sent = __('Email sent', 'bnm');
         $this->mail_failed = __('Mail failed', 'bnm');
         $this->form = __('Form', 'bnm');
-        $this->no_such_email = __('El correo que intenta confirmar no existe en nuestra base de datos', 'bnm');
-        $this->added = __('Su email ha sido confirmado, bienvenido a nuestro Breaking News', 'bnm');
-        $this->deleted = __('Su correo ha sido eliminado de nuestra lista de Breaking News', 'bnm');
+        $this->no_such_email = __('The email address you are trying to confirm does not exist in our database', 'bnm');
+        $this->added = __('Your subscription has been confirmed, welcome to the Breaking News service', 'bnm');
+        $this->deleted = __('Your email address has been removed from the Breaking News database', 'bnm');
         $this->subscribe = __('Subscribe', 'bnm');
         $this->unsubscribe = __('Unsubscribe', 'bnm');
         $this->confirm_subject = __('Confirm subject', 'bnm');
